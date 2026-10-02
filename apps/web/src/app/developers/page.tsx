@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Screen } from "@/components/ui";
+import { LinkButton, Screen } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Build Mini Apps · CrackPay",
@@ -44,6 +44,7 @@ export default function Developers() {
       <pre className="overflow-x-auto rounded-2xl border border-line bg-card p-4 text-xs">
         {'<script src="https://crackpay.vercel.app/miniapp-sdk.js"></script>'}
       </pre>
+      <LinkButton href="/developers/submit">Submit a Mini App</LinkButton>
       {sections.map((section) => (
         <section key={section.title} className="flex flex-col gap-1">
           <h2 className="font-semibold">{section.title}</h2>

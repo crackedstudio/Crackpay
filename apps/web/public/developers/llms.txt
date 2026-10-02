@@ -16,6 +16,7 @@ AI coding assistants: read [SKILL.md](/developers/SKILL.md) first. It has every 
 - [Transactions and balances](/developers/transactions.md): Arc's USDC decimals, sending, token rules, errors.
 - [UI and container](/developers/ui-and-container.md): Frame size, what the sandbox allows, storage, navigation.
 - [Get listed](/developers/listing.md): The listing file, requirements, review, what happens after.
+- [Submit a Mini App](/developers/submit): The submission form.
 
 ## Reference
 

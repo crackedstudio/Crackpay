@@ -74,6 +74,21 @@ and a "not reviewed" warning, plus the red bar on the frame.
 was loaded from, so a Mini App that includes it from a given CrackPay host works
 only inside that host.
 
+## Submissions
+
+Developers submit a listing file at `/developers/submit`. It is validated by
+`src/lib/miniapp/listing.ts` and stored in the Supabase table
+`miniapp_submissions` with status `pending`. Nothing is listed automatically.
+Review rows in the Supabase dashboard, then list approved apps as below and set
+the row's `status`.
+
+Decisions recorded on 2 October 2026:
+- Developer mode stays available on both testnet and mainnet.
+- Test apps must be at a public HTTPS address (deployment, domain or tunnel).
+- The docs use `crackpay.vercel.app` until the production domain is ready. When
+  it is, replace that host across `apps/web/public/developers/` and tell listed
+  developers to update their script tag.
+
 ## Listing an app
 
 Add an entry to `src/config/miniapps.ts` from the developer's listing file:

@@ -43,7 +43,9 @@ the contracts it calls, and can switch it off. See [Get listed](./listing.md).
 
 ## Network
 
-CrackPay currently runs on **Arc Testnet**.
+CrackPay currently runs on **Arc Testnet**. Arc Mainnet will follow. Developer
+mode and listings will be available on both networks, and a listing names the
+network it is for.
 
 | | |
 |---|---|

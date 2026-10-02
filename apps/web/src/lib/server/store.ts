@@ -38,6 +38,9 @@ export interface Store {
   /** Creates the pending user for a phone, or updates its account and handle. */
   savePendingUser(user: Omit<User, "id" | "status">): Promise<User>;
   markRegistered(id: string): Promise<void>;
+
+  /** Records a Mini App listing submitted for review and returns its reference. */
+  saveSubmission(submission: { contact: string; listing: unknown }): Promise<string>;
 }
 
 /** In-process store for tests and for local development without Supabase. */
@@ -45,6 +48,7 @@ export class MemoryStore implements Store {
   private readonly hits = new Map<string, number[]>();
   private readonly challenges = new Map<string, Challenge>();
   private readonly users = new Map<string, User>();
+  readonly submissions: { id: string; contact: string; listing: unknown }[] = [];
   private readonly now: () => number;
 
   constructor(now: () => number = Date.now) {
@@ -106,5 +110,11 @@ export class MemoryStore implements Store {
   async markRegistered(id: string): Promise<void> {
     const user = this.users.get(id);
     if (user) user.status = "registered";
+  }
+
+  async saveSubmission(submission: { contact: string; listing: unknown }): Promise<string> {
+    const id = crypto.randomUUID();
+    this.submissions.push({ id, ...submission });
+    return id;
   }
 }

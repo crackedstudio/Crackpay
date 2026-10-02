@@ -6,7 +6,7 @@ import { Suspense, useSyncExternalStore } from "react";
 import { MiniAppHost } from "@/components/MiniAppHost";
 import { RequireAccount } from "@/components/RequireAccount";
 import { Screen } from "@/components/ui";
-import { testMiniApp } from "@/config/miniapps";
+import { testMiniApp, testUrlProblem } from "@/config/miniapps";
 import { developer } from "@/lib/developer";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
 
@@ -31,7 +31,7 @@ function TestApp({ account }: { account: CrackPaySmartAccount }) {
   if (!app) {
     return (
       <Screen title="Can't load that URL" back="/settings/developer">
-        <p className="text-muted">A test app must be an HTTPS URL, or http://localhost while you develop.</p>
+        <p className="text-muted">{testUrlProblem(url)}</p>
       </Screen>
     );
   }

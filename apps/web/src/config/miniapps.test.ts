@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findMiniApp, miniApps, testMiniApp } from "./miniapps";
+import { findMiniApp, miniApps, testMiniApp, testUrlProblem } from "./miniapps";
 
 describe("testMiniApp", () => {
   it.each(["https://my-app.example.com", "https://abc123.ngrok-free.dev/path?x=1", "http://localhost:5173", "http://127.0.0.1:3001/"])(
@@ -17,6 +17,24 @@ describe("testMiniApp", () => {
       expect(testMiniApp(url)).toBeNull();
     },
   );
+});
+
+describe("testUrlProblem", () => {
+  it("has nothing to say about a URL that loads", () => {
+    for (const url of ["https://my-app.vercel.app", "https://192.168.1.5:5173", "http://localhost:5173"]) {
+      expect(testUrlProblem(url)).toBeNull();
+      expect(testMiniApp(url)).not.toBeNull();
+    }
+  });
+
+  it("explains an insecure network address, and anything else it refuses", () => {
+    expect(testUrlProblem("http://192.168.1.5:5173")).toContain("not secure");
+    expect(testUrlProblem("my-app.vercel.app")).toContain("https://");
+    expect(testUrlProblem("ftp://x.example")).toContain("https://");
+    for (const url of ["http://192.168.1.5:5173", "my-app.vercel.app", "ftp://x.example"]) {
+      expect(testMiniApp(url)).toBeNull();
+    }
+  });
 });
 
 describe("registry", () => {

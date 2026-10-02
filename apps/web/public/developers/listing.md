@@ -6,9 +6,14 @@ listed app that tries to call anything else is refused.
 
 Test in [Developer mode](./test-in-crackpay.md) first. Submit when it works.
 
-## What to send
+## How to submit
 
-Send the CrackPay team a listing file like this.
+Fill in a listing file and submit it at
+**[crackpay.vercel.app/developers/submit](https://crackpay.vercel.app/developers/submit)**,
+with an email address the team can reply to. The form checks the file and tells
+you which field is wrong.
+
+## The listing file
 
 ```json
 {
@@ -43,10 +48,10 @@ Send the CrackPay team a listing file like this.
 | `category` | One of: finance, shopping, utility, games, social, rewards, education, entertainment. |
 | `url` | Where the app loads from. HTTPS, publicly reachable. One URL per listing. |
 | `icon` | Square PNG, 512 × 512. |
-| `supportUrl` | How users reach you. Must also be linked inside the app. |
+| `supportUrl` | How users reach you: an `https://` link or `mailto:`. Must also be linked inside the app. |
 | `termsUrl`, `privacyUrl` | Must also be linked inside the app. |
-| `network` | `arc-testnet` today. |
-| `contracts` | Every contract your app sends transactions to. Nothing else will be callable. |
+| `network` | `arc-testnet` or `arc-mainnet`. One listing per network. Mainnet listings are reviewed once CrackPay is live on Arc Mainnet. |
+| `contracts` | Every contract your app sends transactions to, up to 20. Nothing else will be callable. Each needs `address`, `name`, `purpose` and `explorerUrl`. |
 | `tokenApprovals` | Tokens (`USDC`, `EURC`) your contracts need an allowance on. Leave empty if you only take native USDC. |
 | `origins` | Every origin your app loads scripts, styles or data from. |
 

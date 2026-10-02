@@ -124,4 +124,15 @@ export class SupabaseStore implements Store {
     const result = await this.db.from("users").update({ status: "registered" }).eq("id", id);
     unwrap(result, "mark registered");
   }
+
+  async saveSubmission(submission: { contact: string; listing: unknown }): Promise<string> {
+    const result = await this.db
+      .from("miniapp_submissions")
+      .insert({ contact: submission.contact, listing: submission.listing })
+      .select("id")
+      .single<{ id: string }>();
+    const row = unwrap(result, "save submission");
+    if (!row) throw new Error("Supabase save submission returned no row");
+    return row.id;
+  }
 }

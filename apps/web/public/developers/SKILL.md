@@ -26,8 +26,9 @@ under `https://crackpay.vercel.app/developers/`.
 | USDC, ERC-20 interface, 6 decimals | `0x3600000000000000000000000000000000000000` |
 | EURC, 6 decimals | `0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a` |
 
-Do not invent other addresses or chain IDs. If the user needs mainnet, stop and
-ask: CrackPay Mini Apps are testnet-only today.
+Do not invent other addresses or chain IDs. CrackPay runs on Arc Testnet today;
+Arc Mainnet support is planned for both Developer mode and listings. If the user
+needs mainnet now, say it is not available yet.
 
 ## Rules
 
@@ -202,8 +203,11 @@ never retry automatically.
 
 Tell the user to do this; it needs their passkey.
 
-1. Run the dev server and expose it over HTTPS: `ngrok http <port>`. With Vite,
-   add the tunnel host to `server.allowedHosts`.
+1. Make the app reachable at a public HTTPS address: a deployment (Vercel and
+   similar), the user's own domain, or a tunnel to the dev server
+   (`ngrok http <port>`; with Vite, add the tunnel host to `server.allowedHosts`).
+   A plain `http://` address will not load, except `http://localhost` on the same
+   computer. A local-network address works only if the dev server serves HTTPS.
 2. In CrackPay: Settings → tap **Version** seven times → **Developer settings**
    → switch on **Developer mode**.
 3. Paste the HTTPS URL under **Load test page** and tap **Load**.
@@ -214,7 +218,8 @@ user needs testnet USDC from `https://faucet.circle.com` (Arc Testnet).
 ### 7. Prepare the listing
 
 CrackPay lists an app by recording its URL and the contracts it may call.
-Produce a `crackpay-listing.json` for the user to send to the CrackPay team:
+Produce a `crackpay-listing.json`. The user submits it, with their email, at
+`https://crackpay.vercel.app/developers/submit`:
 
 ```json
 {
@@ -238,6 +243,9 @@ Produce a `crackpay-listing.json` for the user to send to the CrackPay team:
 
 List every contract the app sends transactions to: after listing, anything
 else is refused with `4100`. Contracts must be verified on the Arc explorer.
+`network` is `arc-testnet` or `arc-mainnet`; `category` is one of finance,
+shopping, utility, games, social, rewards, education, entertainment; every link
+must be `https://` (`supportUrl` may be `mailto:`).
 
 ## Porting from MiniPay
 

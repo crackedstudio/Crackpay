@@ -21,13 +21,26 @@ test uses testnet USDC from `https://faucet.circle.com`.
 Your app opens inside CrackPay with a red "Test app · not reviewed" bar. The
 wallet is connected exactly as it will be once you are listed.
 
-The URL must be **HTTPS**. Plain `http://localhost:<port>` is also accepted,
-which works when your app runs on the same computer you are browsing CrackPay
-from. To test on a phone, use a tunnel.
+## Which addresses work
 
-## Testing a local dev server
+Your app must be reachable at a public **HTTPS** address. Any of these work:
 
-Expose your dev server through a tunnel and load the tunnel's HTTPS URL.
+| Where your app is | What to paste |
+|---|---|
+| Deployed on Vercel, Netlify or similar | The deployment URL, for example `https://my-app.vercel.app`. Preview deployments work too. |
+| On your own domain | `https://app.example.com` |
+| On your computer, through a tunnel | The tunnel's HTTPS URL, for example `https://ab12.ngrok-free.dev` |
+| On your local network | The HTTPS network address of your dev server, for example `https://192.168.1.20:5173`. See below. |
+
+An `http://` address will not load, because CrackPay is a secure page and
+browsers refuse to put an insecure page inside it. The one exception is
+`http://localhost:<port>`, which works when your app runs on the same computer
+you are browsing CrackPay from.
+
+## Testing a local dev server through a tunnel
+
+Expose your dev server through a tunnel and load the tunnel's HTTPS URL. This
+is the simplest way to test on a phone.
 
 ```bash
 npm run dev            # say it listens on port 5173
@@ -45,6 +58,21 @@ export default defineConfig({
   server: { allowedHosts: [".ngrok-free.dev", ".ngrok-free.app", ".ngrok.app"] },
 });
 ```
+
+## Testing over your local network
+
+To use your dev server's network address directly, it has to serve HTTPS.
+
+1. Turn on HTTPS in your dev server. With Vite, add
+   [`@vitejs/plugin-basic-ssl`](https://github.com/vitejs/vite-plugin-basic-ssl)
+   and run `vite --host`. With Next.js, run `next dev --experimental-https -H 0.0.0.0`.
+2. On the phone or computer you test with, open the network address
+   (`https://192.168.1.20:5173`) once in a normal tab and accept the
+   certificate warning. Until you do, the frame stays blank.
+3. Paste the same address into **Load test page**.
+
+Both devices must be on the same network. If this gives you trouble, use a
+tunnel instead.
 
 ## What is different for a test app
 

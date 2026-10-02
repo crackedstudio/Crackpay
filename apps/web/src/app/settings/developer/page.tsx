@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { RequireAccount } from "@/components/RequireAccount";
 import { Button, ErrorText, Screen, TextField } from "@/components/ui";
-import { testMiniApp } from "@/config/miniapps";
+import { testMiniApp, testUrlProblem } from "@/config/miniapps";
 import { arcChain } from "@/lib/arc";
 import { developer } from "@/lib/developer";
 
@@ -25,7 +25,7 @@ function DeveloperSettings() {
     event.preventDefault();
     const app = testMiniApp(url);
     if (!app) {
-      setError("Enter an HTTPS URL, or http://localhost:<port> while you develop.");
+      setError(testUrlProblem(url) ?? "That address can't be loaded.");
       return;
     }
     developer.setLastUrl(app.url);
@@ -70,7 +70,7 @@ function DeveloperSettings() {
               setUrl(event.target.value);
               setError(null);
             }}
-            hint="For a local dev server, use a tunnel such as ngrok and paste its HTTPS URL."
+            hint="Any public HTTPS address works: a Vercel deployment, your own domain, or an ngrok tunnel."
           />
           <ErrorText>{error}</ErrorText>
           <Button disabled={!url.trim()}>Load</Button>

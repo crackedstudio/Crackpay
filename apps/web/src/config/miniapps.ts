@@ -56,6 +56,21 @@ function isLocalhost(hostname: string): boolean {
  * every prompt as coming from a test app. Returns null for a URL that cannot
  * be loaded: it must be HTTPS, or plain HTTP on localhost.
  */
+/** Why a URL cannot be loaded as a test app, or null when it can. */
+export function testUrlProblem(input: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(input.trim());
+  } catch {
+    return "Enter the full address of your app, starting with https://";
+  }
+  if (url.protocol === "https:") return null;
+  if (url.protocol !== "http:") return "The address must start with https://";
+  if (isLocalhost(url.hostname)) return null;
+  // Browsers refuse to load an http:// page inside the secure CrackPay page.
+  return "That address is not secure (http://). Use an https:// address: a deployed URL, a tunnel such as ngrok, or HTTPS on your dev server.";
+}
+
 export function testMiniApp(input: string): MiniApp | null {
   let url: URL;
   try {
