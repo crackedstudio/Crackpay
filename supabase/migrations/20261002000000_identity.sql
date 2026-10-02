@@ -76,3 +76,5 @@ $$;
 
 revoke all on function public.rate_limit_hit(text, integer, integer) from public, anon, authenticated;
 revoke all on function public.otp_bump_attempts(uuid) from public, anon, authenticated;
+grant execute on function public.rate_limit_hit(text, integer, integer) to service_role;
+grant execute on function public.otp_bump_attempts(uuid) to service_role;
