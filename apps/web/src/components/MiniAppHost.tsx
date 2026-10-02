@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet } from "@/components/Sheet";
-import { Alert, Face } from "@/components/icons";
-import { Button, EmptyState, LinkButton, Screen, Spinner } from "@/components/ui";
+import { Alert, ArrowLeft, Face } from "@/components/icons";
+import { Button, Callout, EmptyState, LinkButton, Screen, Spinner } from "@/components/ui";
 import { arcChain, publicClient } from "@/lib/arc";
 import { handleRequest, toWireError } from "@/lib/miniapp/bridge";
 import { RpcError } from "@/lib/miniapp/errors";
@@ -11,6 +12,7 @@ import { checkTransaction, type TransactionSummary } from "@/lib/miniapp/policy"
 import { envelope, isMiniAppMessage, type MiniAppMessage } from "@/lib/miniapp/sdk";
 import { formatAmountExact, nativeToBaseCeil } from "@/lib/money";
 import { sendSponsoredUserOp } from "@/lib/userop";
+import type { Address } from "viem";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
 import type { MiniApp } from "@/config/miniapps";
 
@@ -18,6 +20,16 @@ type Pending = { summary: TransactionSummary; resolve: (approved: boolean) => vo
 
 // 2^128: anything at or above this is an "unlimited" allowance in practice.
 const UNLIMITED = 1n << 128n;
+
+/**
+ * Who the money is going to. A listed app is named; a Developer-mode test app is
+ * not, because nobody has checked that its name is its own — the raw address is
+ * the only honest answer there.
+ */
+function Recipient({ app, address }: { app: MiniApp; address: Address }) {
+  if (!app.test) return <>{app.name}</>;
+  return <span className="break-all font-mono text-sm">{address}</span>;
+}
 
 function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }) {
   if (summary.kind === "approve") {
@@ -28,8 +40,20 @@ function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }
           {unlimited ? "Unlimited" : `${formatAmountExact(summary.amount)} ${summary.token.symbol}`}
         </p>
         <p className="text-muted">
-          {app.name} is asking to spend {unlimited ? `as much ${summary.token.symbol} as it likes` : "up to this"} from your
-          balance, now and later.
+          <Recipient app={app} address={summary.spender} /> is asking to spend{" "}
+          {unlimited ? `as much ${summary.token.symbol} as it likes` : "up to this"} from your balance, now and later.
+        </p>
+      </div>
+    );
+  }
+  if (summary.kind === "transfer") {
+    return (
+      <div className="flex flex-col items-center gap-2 text-center">
+        <p className="numeric text-4xl font-semibold">
+          {formatAmountExact(summary.amount)} {summary.token.symbol}
+        </p>
+        <p className="text-muted">
+          will leave your balance and go to <Recipient app={app} address={summary.to} />.
         </p>
       </div>
     );
@@ -37,7 +61,9 @@ function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }
   return (
     <div className="flex flex-col items-center gap-2 text-center">
       <p className="numeric text-4xl font-semibold">${formatAmountExact(nativeToBaseCeil(summary.value))}</p>
-      <p className="text-muted">will leave your balance and go to {app.name}.</p>
+      <p className="text-muted">
+        will leave your balance and go to <Recipient app={app} address={summary.to} />.
+      </p>
     </div>
   );
 }
@@ -139,6 +165,26 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
 
   return (
     <div className="relative mx-auto flex w-full max-w-[460px] flex-1 flex-col">
+      {app.test ? (
+        <div className="flex items-center justify-between gap-3 bg-danger px-4 py-2 text-xs font-medium text-white">
+          <span className="truncate">Test app · {new URL(app.url).host} · not reviewed</span>
+          {/* A full page load, so the looser frame policy of the test route does not carry over. */}
+          <a href="/settings/developer" className="shrink-0 underline">
+            Close
+          </a>
+        </div>
+      ) : (
+        <header className="flex h-14 items-center gap-1 border-b border-line px-2 pt-[env(safe-area-inset-top)]">
+          <Link
+            href="/apps"
+            aria-label="Back to apps"
+            className="pressable flex h-11 w-11 items-center justify-center rounded-full"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <span className="truncate font-semibold">{app.name}</span>
+        </header>
+      )}
       {src && (
         <iframe
           ref={frame}
@@ -163,6 +209,12 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
           <div className="py-2">
             <Summary app={app} summary={pending.summary} />
           </div>
+          {app.test && (
+            <Callout tone="error">
+              This is a test app loaded in Developer mode. CrackPay has not reviewed it and has not checked the contract it
+              is calling. Only confirm if it is your own app.
+            </Callout>
+          )}
           <div className="flex flex-col gap-2 pb-2">
             <Button onClick={() => decide(true)}>
               <Face className="h-5 w-5" />

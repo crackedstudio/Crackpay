@@ -74,3 +74,40 @@ describe("checkTransaction", () => {
     expect(code(() => checkTransaction(policy, { to: EURC, data: approve(ESCROW, 1n), value: 1n }))).toBe(4100);
   });
 });
+
+describe("unrestricted (Developer mode) policy", () => {
+  const open: Policy = { contracts: [], tokens: [{ symbol: "EURC", address: EURC }], unrestricted: true };
+
+  it("allows any contract and reports the exact target and value", () => {
+    expect(checkTransaction(open, { to: STRANGER, data: "0x1234", value: 7n })).toEqual({
+      kind: "contract",
+      to: STRANGER,
+      value: 7n,
+    });
+  });
+
+  it("describes token approvals and transfers with their real counterparty", () => {
+    expect(checkTransaction(open, { to: EURC, data: approve(STRANGER, 5n), value: 0n })).toEqual({
+      kind: "approve",
+      token: { symbol: "EURC", address: EURC },
+      spender: STRANGER,
+      amount: 5n,
+    });
+    const transfer = encodeFunctionData({ abi: erc20Abi, functionName: "transfer", args: [STRANGER, 9n] });
+    expect(checkTransaction(open, { to: EURC, data: transfer, value: 0n })).toEqual({
+      kind: "transfer",
+      token: { symbol: "EURC", address: EURC },
+      to: STRANGER,
+      amount: 9n,
+    });
+  });
+
+  it("falls back to a raw contract call for token calls it cannot describe", () => {
+    expect(checkTransaction(open, { to: EURC, data: "0xdeadbeef", value: 0n }).kind).toBe("contract");
+    expect(checkTransaction(open, { to: EURC, data: approve(STRANGER, 1n), value: 1n }).kind).toBe("contract");
+  });
+
+  it("does not loosen a listed app's policy", () => {
+    expect(code(() => checkTransaction(policy, { to: STRANGER, data: "0x", value: 0n }))).toBe(4100);
+  });
+});

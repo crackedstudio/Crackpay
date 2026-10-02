@@ -12,6 +12,8 @@ export type MiniApp = {
   /** Kill switch: a disabled app is neither listed nor loadable. */
   enabled: boolean;
   policy: Policy;
+  /** Set for an unreviewed URL loaded through Developer mode. Never set in the registry. */
+  test?: boolean;
 };
 
 const tokens = contracts[arcTestnet.id];
@@ -42,4 +44,42 @@ export function findMiniApp(id: string): MiniApp | undefined {
 /** Origins CrackPay is allowed to frame. Feeds the CSP `frame-src` allowlist. */
 export function miniAppOrigins(): string[] {
   return miniApps.filter((app) => app.enabled).map((app) => new URL(app.url).origin);
+}
+
+function isLocalhost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+/**
+ * Wraps an arbitrary URL as a Mini App for Developer mode. It is not reviewed
+ * and nothing is allowlisted, so its policy is unrestricted and the host marks
+ * every prompt as coming from a test app. Returns null for a URL that cannot
+ * be loaded: it must be HTTPS, or plain HTTP on localhost.
+ */
+export function testMiniApp(input: string): MiniApp | null {
+  let url: URL;
+  try {
+    url = new URL(input.trim());
+  } catch {
+    return null;
+  }
+  const allowed = url.protocol === "https:" || (url.protocol === "http:" && isLocalhost(url.hostname));
+  if (!allowed) return null;
+
+  return {
+    id: "test",
+    name: url.host,
+    description: "Test app",
+    url: url.href,
+    enabled: true,
+    test: true,
+    policy: {
+      contracts: [],
+      tokens: [
+        { symbol: "USDC", address: tokens.usdc },
+        { symbol: "EURC", address: tokens.eurc },
+      ],
+      unrestricted: true,
+    },
+  };
 }

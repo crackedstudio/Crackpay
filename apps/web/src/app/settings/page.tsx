@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Avatar } from "@/components/Avatar";
 import { CopyRow } from "@/components/CopyRow";
 import { InstallPrompt } from "@/components/InstallPrompt";
@@ -9,11 +9,52 @@ import { RequireAccount } from "@/components/RequireAccount";
 import { Sheet } from "@/components/Sheet";
 import { TabBar } from "@/components/TabBar";
 import { useWallet } from "@/components/WalletProvider";
-import { ChevronRight, External, Receipt, Shield, Wallet } from "@/components/icons";
+import { ChevronRight, Code, External, Receipt, Shield, Wallet } from "@/components/icons";
 import { Button, Card, ListRow, Screen } from "@/components/ui";
 import { arcChain } from "@/lib/arc";
+import { developer, UNLOCK_TAPS } from "@/lib/developer";
 import { shortAddress } from "@/lib/format";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
+import packageInfo from "../../../package.json";
+
+const subscribe = () => () => {};
+
+/** The version row. Tapping it repeatedly reveals Developer settings, as in MiniPay. */
+function About() {
+  const stored = useSyncExternalStore(subscribe, developer.isUnlocked, () => false);
+  const [taps, setTaps] = useState(0);
+  const unlocked = stored || taps >= UNLOCK_TAPS;
+
+  function tap() {
+    const next = taps + 1;
+    setTaps(next);
+    if (next === UNLOCK_TAPS) developer.unlock();
+  }
+
+  const remaining = UNLOCK_TAPS - taps;
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">About</h2>
+      <Card className="divide-y divide-line">
+        <ListRow
+          layout="inline"
+          label="Version"
+          value={!unlocked && taps >= 3 ? `${remaining} more to unlock developer settings` : packageInfo.version}
+          onClick={tap}
+        />
+        {unlocked && (
+          <ListRow
+            label="Developer settings"
+            value="Load a Mini App from a URL"
+            icon={<Code className="h-5 w-5" />}
+            href="/settings/developer"
+            trailing={<ChevronRight className="h-5 w-5 text-muted" />}
+          />
+        )}
+      </Card>
+    </section>
+  );
+}
 
 function SettingsScreen({ account, handle }: { account: CrackPaySmartAccount; handle: string }) {
   const wallet = useWallet();
@@ -76,6 +117,8 @@ function SettingsScreen({ account, handle }: { account: CrackPaySmartAccount; ha
             />
           </Card>
         </section>
+
+        <About />
 
         <InstallPrompt />
 

@@ -17,6 +17,17 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Developer mode loads a developer's own URL, so this one route may frame any
+        // HTTPS site, or a dev server on localhost. Listed after the rule above so it wins.
+        source: "/apps/test",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-src https: http://localhost:* http://127.0.0.1:*",
+          },
+        ],
+      },
+      {
         source: "/sw.js",
         headers: [
           { key: "Content-Type", value: "application/javascript; charset=utf-8" },

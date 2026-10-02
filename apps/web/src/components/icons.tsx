@@ -199,3 +199,11 @@ export const External = (p: IconProps) => (
     <path d="M18 14.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4.5" />
   </Svg>
 );
+
+export const Code = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8.5 8.5 4 12l4.5 3.5" />
+    <path d="M15.5 8.5 20 12l-4.5 3.5" />
+    <path d="M13.5 5 10.5 19" />
+  </Svg>
+);

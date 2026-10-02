@@ -8,13 +8,20 @@ export type Token = { symbol: string; address: Address };
 /** What the user is asked to approve, in terms they can check. */
 export type TransactionSummary =
   | { kind: "contract"; to: Address; /** Native 18-decimal USDC sent with the call. */ value: bigint }
-  | { kind: "approve"; token: Token; spender: Address; /** 6-decimal base units. */ amount: bigint };
+  | { kind: "approve"; token: Token; spender: Address; /** 6-decimal base units. */ amount: bigint }
+  | { kind: "transfer"; token: Token; to: Address; /** 6-decimal base units. */ amount: bigint };
 
 export type Policy = {
   /** Contracts this Mini App may call. */
   contracts: readonly Address[];
   /** Tokens it may ask for an allowance on, and only for one of `contracts`. */
   tokens: readonly Token[];
+  /**
+   * Developer-mode test apps only. Nothing is allowlisted, so every call is
+   * permitted and it falls to the confirmation prompt to show the user exactly
+   * what is being called. `tokens` is then used only to describe token calls.
+   */
+  unrestricted?: boolean;
 };
 
 const includes = (list: readonly Address[], address: Address) =>
@@ -27,6 +34,8 @@ const includes = (list: readonly Address[], address: Address) =>
  * a token transfer or an approval to an unknown spender, is refused.
  */
 export function checkTransaction(policy: Policy, tx: TransactionRequest): TransactionSummary {
+  if (policy.unrestricted) return describeUnrestricted(policy, tx);
+
   if (includes(policy.contracts, tx.to)) {
     return { kind: "contract", to: tx.to, value: tx.value };
   }
@@ -50,4 +59,23 @@ export function checkTransaction(policy: Policy, tx: TransactionRequest): Transa
     throw unauthorized(`This app cannot approve ${spender} to spend ${token.symbol}`);
   }
   return { kind: "approve", token, spender, amount };
+}
+
+/** Describes a test app's call as precisely as it can be decoded, without refusing anything. */
+function describeUnrestricted(policy: Policy, tx: TransactionRequest): TransactionSummary {
+  const token = policy.tokens.find((entry) => isAddressEqual(entry.address, tx.to));
+  if (token && tx.value === 0n) {
+    try {
+      const call = decodeFunctionData({ abi: erc20Abi, data: tx.data });
+      if (call.functionName === "approve") {
+        return { kind: "approve", token, spender: call.args[0], amount: call.args[1] };
+      }
+      if (call.functionName === "transfer") {
+        return { kind: "transfer", token, to: call.args[0], amount: call.args[1] };
+      }
+    } catch {
+      // Not a standard ERC-20 call: fall through and show it as a raw contract call.
+    }
+  }
+  return { kind: "contract", to: tx.to, value: tx.value };
 }
