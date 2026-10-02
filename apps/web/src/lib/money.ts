@@ -18,11 +18,11 @@ export type MoneyErrorCode =
 
 export class MoneyError extends Error {
   override name = "MoneyError";
-  constructor(
-    readonly code: MoneyErrorCode,
-    message: string,
-  ) {
+  readonly code: MoneyErrorCode;
+
+  constructor(code: MoneyErrorCode, message: string) {
     super(message);
+    this.code = code;
   }
 }
 
