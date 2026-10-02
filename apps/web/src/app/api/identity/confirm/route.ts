@@ -1,4 +1,5 @@
 import { isAddress } from "viem";
+import { ONBOARDING_MODE } from "@/config/onboarding";
 import { identityDeps } from "@/lib/server/context";
 import { ApiError } from "@/lib/server/errors";
 import { readBody, respond, setSessionCookie, stringField } from "@/lib/server/http";
@@ -13,7 +14,9 @@ export function POST(request: Request): Promise<Response> {
 
     const deps = identityDeps();
     const user = await confirmRegistration(deps, await registrantLookup(deps, request, account));
-    await setSessionCookie(user.id);
+    // Only a verified phone proves who is calling. In passkey mode anyone can name an
+    // account here, so no session is issued; nothing in that mode needs one.
+    if (ONBOARDING_MODE === "phone") await setSessionCookie(user.id);
     return { account: user.smartAccount, handle: user.handle };
   });
 }

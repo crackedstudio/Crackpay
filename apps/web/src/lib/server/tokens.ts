@@ -5,7 +5,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export type PhoneToken = { typ: "phone"; phoneLookup: string };
 export type SessionToken = { typ: "session"; userId: string };
-type Payload = PhoneToken | SessionToken;
+export type AdminToken = { typ: "admin" };
+type Payload = PhoneToken | SessionToken | AdminToken;
 
 const mac = (secret: string, body: string) => createHmac("sha256", secret).update(body).digest();
 

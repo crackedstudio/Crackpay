@@ -34,7 +34,7 @@ Mini App (iframe, its own origin)            CrackPay page
 - **Origins.** CrackPay only accepts messages from the app's iframe window and its
   registered origin, and only posts to that origin. The SDK does the same in
   reverse against its `hostOrigins` list.
-- **CSP.** `frame-src` lists exactly the registered apps, so nothing else can be framed.
+- **CSP.** Each app's page may frame only that app's origin; no other page may frame anything.
 - **Sandbox.** `allow-scripts allow-forms allow-popups allow-same-origin`. This
   differs from the implementation plan, which omits `allow-same-origin`. Without
   it the app has an opaque origin: `event.origin` is `"null"`, so origin checks
@@ -47,8 +47,8 @@ Mini App (iframe, its own origin)            CrackPay page
 - **Prompts** render in the CrackPay page, never in the iframe. Amounts are rounded
   up, so a prompt never shows less than will leave the balance.
 - **Keys** never leave the CrackPay page.
-- **Kill switch.** `enabled: false` in the registry removes an app from the list,
-  the route and the CSP.
+- **Kill switch.** Switching an app off in the admin removes it from the list, the
+  route and the frame policy on the next request.
 
 ## Developer mode
 
@@ -79,8 +79,7 @@ only inside that host.
 Developers submit a listing file at `/developers/submit`. It is validated by
 `src/lib/miniapp/listing.ts` and stored in the Supabase table
 `miniapp_submissions` with status `pending`. Nothing is listed automatically.
-Review rows in the Supabase dashboard, then list approved apps as below and set
-the row's `status`.
+Review them at `/admin/submissions`.
 
 Decisions recorded on 2 October 2026:
 - Developer mode stays available on both testnet and mainnet.
@@ -89,12 +88,31 @@ Decisions recorded on 2 October 2026:
   it is, replace that host across `apps/web/public/developers/` and tell listed
   developers to update their script tag.
 
-## Listing an app
+## The registry and the admin
 
-Add an entry to `src/config/miniapps.ts` from the developer's listing file:
-`url`, and a policy with every contract in `contracts` and each token in
-`tokenApprovals`. Deploying is what whitelists it; the CSP is built from the
-registry.
+Listed Mini Apps live in the Supabase table `miniapps`, not in code. They are
+managed at `/admin`, a separate area with its own sign-in and layout:
+
+- **Mini Apps**: every app, live or off. Create, edit, switch on or off, delete.
+- **Submissions**: listings developers sent in. "Create a Mini App from this"
+  opens the form filled in from the submission; saving marks it approved.
+
+An app is visible to users only when it is switched on and its network matches
+this deployment. Changes take effect on the next request, with no deploy:
+
+- `GET /api/miniapps` and `/api/miniapps/<id>` are what the wallet reads.
+- `src/proxy.ts` sets the frame policy for `/apps/*` per request, so `/apps/<id>`
+  may frame exactly that app's origin and only while it is on. If the registry
+  cannot be read it fails closed and frames nothing.
+- Every other route is limited to `frame-src 'self'` in `next.config.ts`.
+
+Admin access is one shared password, `ADMIN_PASSWORD` (at least 16 characters),
+checked in constant time, limited to ten attempts an hour per IP, and held as a
+12-hour `SameSite=Strict` cookie. There are no per-person admin accounts or
+audit trail yet; add those before more people need access.
+
+`DEFAULT_MINI_APPS` in `src/config/miniapps.ts` is only what a local dev server
+shows when Supabase is not configured.
 
 ## Not supported yet
 

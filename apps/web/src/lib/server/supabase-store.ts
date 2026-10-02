@@ -1,6 +1,55 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Address, Hex } from "viem";
-import type { Challenge, Store, User } from "./store";
+import type { MiniAppRecord } from "../miniapp/registry";
+import type { Challenge, Store, Submission, User } from "./store";
+
+type SubmissionRow = {
+  id: string;
+  contact: string;
+  listing: unknown;
+  status: Submission["status"];
+  review_notes: string | null;
+  created_at: string;
+};
+
+type MiniAppRow = {
+  id: string;
+  name: string;
+  tagline: string;
+  publisher: string;
+  category: MiniAppRecord["category"];
+  url: string;
+  icon: string | null;
+  network: MiniAppRecord["network"];
+  contracts: MiniAppRecord["contracts"];
+  token_approvals: MiniAppRecord["tokenApprovals"];
+  enabled: boolean;
+  sort_order: number;
+};
+
+const toSubmission = (row: SubmissionRow): Submission => ({
+  id: row.id,
+  contact: row.contact,
+  listing: row.listing,
+  status: row.status,
+  reviewNotes: row.review_notes,
+  createdAt: row.created_at,
+});
+
+const toRecord = (row: MiniAppRow): MiniAppRecord => ({
+  id: row.id,
+  name: row.name,
+  tagline: row.tagline,
+  publisher: row.publisher,
+  category: row.category,
+  url: row.url,
+  icon: row.icon,
+  network: row.network,
+  contracts: row.contracts,
+  tokenApprovals: row.token_approvals,
+  enabled: row.enabled,
+  sortOrder: row.sort_order,
+});
 
 type UserRow = {
   id: string;
@@ -134,5 +183,64 @@ export class SupabaseStore implements Store {
     const row = unwrap(result, "save submission");
     if (!row) throw new Error("Supabase save submission returned no row");
     return row.id;
+  }
+
+  async listSubmissions(): Promise<Submission[]> {
+    const result = await this.db
+      .from("miniapp_submissions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200)
+      .returns<SubmissionRow[]>();
+    return (unwrap(result, "list submissions") ?? []).map(toSubmission);
+  }
+
+  async getSubmission(id: string): Promise<Submission | null> {
+    const result = await this.db.from("miniapp_submissions").select("*").eq("id", id).maybeSingle<SubmissionRow>();
+    const row = unwrap(result, "get submission");
+    return row ? toSubmission(row) : null;
+  }
+
+  async reviewSubmission(id: string, status: Submission["status"], notes: string | null): Promise<void> {
+    const result = await this.db.from("miniapp_submissions").update({ status, review_notes: notes }).eq("id", id);
+    unwrap(result, "review submission");
+  }
+
+  async listMiniApps(): Promise<MiniAppRecord[]> {
+    const result = await this.db.from("miniapps").select("*").order("sort_order").order("name").returns<MiniAppRow[]>();
+    return (unwrap(result, "list mini apps") ?? []).map(toRecord);
+  }
+
+  async getMiniApp(id: string): Promise<MiniAppRecord | null> {
+    const result = await this.db.from("miniapps").select("*").eq("id", id).maybeSingle<MiniAppRow>();
+    const row = unwrap(result, "get mini app");
+    return row ? toRecord(row) : null;
+  }
+
+  async saveMiniApp(app: MiniAppRecord): Promise<void> {
+    const result = await this.db.from("miniapps").upsert(
+      {
+        id: app.id,
+        name: app.name,
+        tagline: app.tagline,
+        publisher: app.publisher,
+        category: app.category,
+        url: app.url,
+        icon: app.icon,
+        network: app.network,
+        contracts: app.contracts,
+        token_approvals: app.tokenApprovals,
+        enabled: app.enabled,
+        sort_order: app.sortOrder,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+    unwrap(result, "save mini app");
+  }
+
+  async deleteMiniApp(id: string): Promise<void> {
+    const result = await this.db.from("miniapps").delete().eq("id", id);
+    unwrap(result, "delete mini app");
   }
 }

@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import { miniAppOrigins } from "./src/config/miniapps";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -7,25 +6,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Only registered Mini Apps can be framed.
-        source: "/(.*)",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: `frame-src 'self' ${miniAppOrigins().join(" ")}`,
-          },
-        ],
-      },
-      {
-        // Developer mode loads a developer's own URL, so this one route may frame any
-        // HTTPS site, or a dev server on localhost. Listed after the rule above so it wins.
-        source: "/apps/test",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: "frame-src https: http://localhost:* http://127.0.0.1:*",
-          },
-        ],
+        // No page may frame another site. The Mini App routes under /apps are the
+        // exception, and get their policy per request from src/proxy.ts.
+        source: "/((?!apps(?:/|$)).*)",
+        headers: [{ key: "Content-Security-Policy", value: "frame-src 'self'" }],
       },
       {
         source: "/sw.js",

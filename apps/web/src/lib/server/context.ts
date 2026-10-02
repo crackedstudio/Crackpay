@@ -1,6 +1,7 @@
 import { privateKeyToAccount } from "viem/accounts";
 import type { Hex } from "viem";
 import { contracts } from "../../config/contracts";
+import { DEFAULT_MINI_APPS } from "../../config/miniapps";
 import { ONBOARDING_MODE } from "../../config/onboarding";
 import { identityRegistryAbi } from "../../config/identity";
 import { arcChain, publicClient } from "../arc";
@@ -14,7 +15,7 @@ import { twilioVerify } from "./twilio-verify";
 const isProduction = process.env.NODE_ENV === "production";
 
 // Survives dev-server hot reloads, so the in-memory store is not wiped on every edit.
-const globals = globalThis as { crackpayDeps?: IdentityDeps };
+const globals = globalThis as { crackpayDeps?: IdentityDeps; crackpayStore?: Store };
 
 function createStore(): Store {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -22,7 +23,13 @@ function createStore(): Store {
   if (url && key) return new SupabaseStore(url, key);
   if (isProduction) throw new ServerConfigError("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are not set");
   console.warn("[crackpay] Supabase is not configured: using an in-memory store that is lost on restart.");
-  return new MemoryStore();
+  return new MemoryStore(Date.now, DEFAULT_MINI_APPS);
+}
+
+/** The database. Needs none of the identity secrets, so admin and registry routes can use it alone. */
+export function getStore(): Store {
+  globals.crackpayStore ??= createStore();
+  return globals.crackpayStore;
 }
 
 /** Twilio Verify when its three variables are set; otherwise nothing. */
@@ -51,7 +58,7 @@ export function identityDeps(): IdentityDeps {
   const read = { address: registryAddress, abi: identityRegistryAbi } as const;
 
   globals.crackpayDeps = {
-    store: createStore(),
+    store: getStore(),
     sms: consoleSms,
     verifier: createVerifier(),
     exposeDevCode: !isProduction,

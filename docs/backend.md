@@ -42,6 +42,7 @@ every user's salt.
 | `PHONE_HASH_PEPPER` | Keys `phone_lookup`. Changing it orphans every existing user. |
 | `SESSION_SECRET` | Signs cookies and OTP hashes. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Database. |
+| `ADMIN_PASSWORD` | Signs in to `/admin`. At least 16 characters. |
 
 Apply schema changes from the repo root with
 `supabase db push --db-url "$SUPABASE_DB_URL"`, where `SUPABASE_DB_URL` is the

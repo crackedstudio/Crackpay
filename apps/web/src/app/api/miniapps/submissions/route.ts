@@ -1,5 +1,5 @@
 import { ListingError, parseListing } from "@/lib/miniapp/listing";
-import { identityDeps } from "@/lib/server/context";
+import { getStore } from "@/lib/server/context";
 import { ApiError } from "@/lib/server/errors";
 import { clientIp, readBody, respond, stringField } from "@/lib/server/http";
 
@@ -21,7 +21,7 @@ export function POST(request: Request): Promise<Response> {
       throw error;
     }
 
-    const { store } = identityDeps();
+    const store = getStore();
     if (!(await store.hit(`submission:ip:${clientIp(request)}`, 24 * 60 * 60, 10))) {
       throw new ApiError(429, "rate_limited", "Too many submissions today. Try again tomorrow.");
     }

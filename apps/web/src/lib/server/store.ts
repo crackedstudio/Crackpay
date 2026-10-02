@@ -1,4 +1,14 @@
 import type { Address, Hex } from "viem";
+import type { MiniAppRecord } from "../miniapp/registry";
+
+export type Submission = {
+  id: string;
+  contact: string;
+  listing: unknown;
+  status: "pending" | "approved" | "rejected";
+  reviewNotes: string | null;
+  createdAt: string;
+};
 
 export type User = {
   id: string;
@@ -41,6 +51,16 @@ export interface Store {
 
   /** Records a Mini App listing submitted for review and returns its reference. */
   saveSubmission(submission: { contact: string; listing: unknown }): Promise<string>;
+  listSubmissions(): Promise<Submission[]>;
+  getSubmission(id: string): Promise<Submission | null>;
+  reviewSubmission(id: string, status: Submission["status"], notes: string | null): Promise<void>;
+
+  /** Every listed Mini App, enabled or not. */
+  listMiniApps(): Promise<MiniAppRecord[]>;
+  getMiniApp(id: string): Promise<MiniAppRecord | null>;
+  /** Creates the app or replaces the one with the same id. */
+  saveMiniApp(app: MiniAppRecord): Promise<void>;
+  deleteMiniApp(id: string): Promise<void>;
 }
 
 /** In-process store for tests and for local development without Supabase. */
@@ -48,11 +68,13 @@ export class MemoryStore implements Store {
   private readonly hits = new Map<string, number[]>();
   private readonly challenges = new Map<string, Challenge>();
   private readonly users = new Map<string, User>();
-  readonly submissions: { id: string; contact: string; listing: unknown }[] = [];
+  private readonly submissions: Submission[] = [];
+  private readonly miniApps = new Map<string, MiniAppRecord>();
   private readonly now: () => number;
 
-  constructor(now: () => number = Date.now) {
+  constructor(now: () => number = Date.now, miniApps: readonly MiniAppRecord[] = []) {
     this.now = now;
+    for (const app of miniApps) this.miniApps.set(app.id, app);
   }
 
   async hit(key: string, windowSeconds: number, max: number): Promise<boolean> {
@@ -114,7 +136,44 @@ export class MemoryStore implements Store {
 
   async saveSubmission(submission: { contact: string; listing: unknown }): Promise<string> {
     const id = crypto.randomUUID();
-    this.submissions.push({ id, ...submission });
+    this.submissions.unshift({
+      id,
+      ...submission,
+      status: "pending",
+      reviewNotes: null,
+      createdAt: new Date(this.now()).toISOString(),
+    });
     return id;
+  }
+
+  async listSubmissions(): Promise<Submission[]> {
+    return this.submissions.map((submission) => ({ ...submission }));
+  }
+
+  async getSubmission(id: string): Promise<Submission | null> {
+    const found = this.submissions.find((submission) => submission.id === id);
+    return found ? { ...found } : null;
+  }
+
+  async reviewSubmission(id: string, status: Submission["status"], notes: string | null): Promise<void> {
+    const found = this.submissions.find((submission) => submission.id === id);
+    if (found) Object.assign(found, { status, reviewNotes: notes });
+  }
+
+  async listMiniApps(): Promise<MiniAppRecord[]> {
+    return [...this.miniApps.values()].map((app) => ({ ...app }));
+  }
+
+  async getMiniApp(id: string): Promise<MiniAppRecord | null> {
+    const app = this.miniApps.get(id);
+    return app ? { ...app } : null;
+  }
+
+  async saveMiniApp(app: MiniAppRecord): Promise<void> {
+    this.miniApps.set(app.id, { ...app });
+  }
+
+  async deleteMiniApp(id: string): Promise<void> {
+    this.miniApps.delete(id);
   }
 }

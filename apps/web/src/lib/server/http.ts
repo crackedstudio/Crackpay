@@ -5,6 +5,8 @@ import { signToken, verifyToken, type PhoneToken, type SessionToken } from "./to
 
 const PHONE_COOKIE = "cp_phone";
 const SESSION_COOKIE = "cp_session";
+const ADMIN_COOKIE = "cp_admin";
+const ADMIN_TTL = 12 * 60 * 60;
 const PHONE_TTL = 15 * 60;
 const SESSION_TTL = 30 * 24 * 60 * 60;
 
@@ -72,6 +74,26 @@ export async function readPhoneToken(): Promise<PhoneToken | null> {
 
 export async function readSessionToken(): Promise<SessionToken | null> {
   return verifyToken(sessionSecret(), (await cookies()).get(SESSION_COOKIE)?.value, "session");
+}
+
+export async function setAdminCookie(): Promise<void> {
+  // Strict: the admin cookie is never sent on a request that started on another site.
+  (await cookies()).set(ADMIN_COOKIE, signToken(sessionSecret(), { typ: "admin" }, ADMIN_TTL), {
+    ...cookieOptions(ADMIN_TTL),
+    sameSite: "strict",
+  });
+}
+
+export async function clearAdminCookie(): Promise<void> {
+  (await cookies()).delete(ADMIN_COOKIE);
+}
+
+export async function isAdmin(): Promise<boolean> {
+  return verifyToken(sessionSecret(), (await cookies()).get(ADMIN_COOKIE)?.value, "admin") !== null;
+}
+
+export async function requireAdmin(): Promise<void> {
+  if (!(await isAdmin())) throw new ApiError(401, "admin_signed_out", "Sign in to the admin.");
 }
 
 export async function requirePhone(): Promise<PhoneToken> {

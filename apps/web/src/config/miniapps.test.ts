@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findMiniApp, miniApps, testMiniApp, testUrlProblem } from "./miniapps";
+import { DEFAULT_MINI_APPS, testMiniApp, testUrlProblem } from "./miniapps";
 
 describe("testMiniApp", () => {
   it.each(["https://my-app.example.com", "https://abc123.ngrok-free.dev/path?x=1", "http://localhost:5173", "http://127.0.0.1:3001/"])(
@@ -37,15 +37,8 @@ describe("testUrlProblem", () => {
   });
 });
 
-describe("registry", () => {
-  it("never marks a listed app as a test app or unrestricted", () => {
-    for (const app of miniApps) {
-      expect(app.test).toBeUndefined();
-      expect(app.policy.unrestricted).toBeUndefined();
-    }
-  });
-
-  it("does not resolve the reserved test id", () => {
-    expect(findMiniApp("test")).toBeUndefined();
+describe("development defaults", () => {
+  it("never uses the id reserved for Developer mode", () => {
+    expect(DEFAULT_MINI_APPS.some((app) => app.id === "test")).toBe(false);
   });
 });
