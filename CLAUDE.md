@@ -29,6 +29,7 @@ CrackPay: a self-custodial USD stablecoin wallet on **Arc** (Circle's L1, where 
 | Accounts | `@circle-fin/modular-wallets-core` (Web SDK) | Passkey smart accounts (ERC-4337) |
 | Gas | Circle Gas Station | `paymaster: true` on every userOp |
 | Payments SDK | Circle App Kit + viem adapter | Send, Swap, Bridge, Unified Balance, Earn |
+| QR codes | `qrcode` | Generation only; rendered as our own SVG in `src/lib/qr.ts` |
 | Backend | Supabase (Postgres, Auth, Edge Functions, Realtime) | |
 | Contracts | Solidity + Arc Foundry + OpenZeppelin Contracts v5 | Circle's Foundry fork: `arc-forge`, `arc-cast`, `arc-anvil`. Use OpenZeppelin for signatures, EIP-712 and access control rather than hand-rolling |
 | Hosting | Vercel | |
