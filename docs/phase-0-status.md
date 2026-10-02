@@ -50,8 +50,9 @@ node --experimental-strip-types scripts/unified-balance.ts spend 1 <smart accoun
 - **Web Push uses a hand-written VAPID signer** (`src/lib/server/vapid.ts`) and sends
   payload-less pushes, to avoid adding a push library. Notifications with custom text
   need payload encryption (RFC 8291), which means either more code or `web-push`.
-- **Arc recommends Arc Foundry** (`arc-forge`) for contract work. The repo uses stock
-  Foundry so far.
+- **Contracts use Arc Foundry** v0.8.0-2 (`arc-forge`, `arc-cast`, `arc-anvil`), as Arc's
+  docs recommend. Install from https://github.com/circlefin/arc-foundry/releases into
+  `~/.local/bin`; see https://docs.arc.io/arc/tutorials/install-arc-foundry.
 
 ## Open questions
 
@@ -60,7 +61,8 @@ node --experimental-strip-types scripts/unified-balance.ts spend 1 <smart accoun
   `userop.ts` if not.
 - **Unified Balance with passkey accounts.** A smart account cannot sign Unified
   Balance burn intents itself; Circle's answer is an EOA delegate. The spike avoids
-  this by depositing from an external EOA and spending to the smart account. Decide
-  before Phase 2 whether CrackPay users ever hold a Unified Balance of their own.
+  this by depositing from an external EOA and spending to the smart account. Working
+  assumption: users only fund this way and never hold a Unified Balance of their own.
+  Revisit before Phase 2 if that changes.
 - **Explorer URL.** viem and the plan use `testnet.arcscan.app`; Arc's docs now link
   `explorer.testnet.arc.io`. The app uses viem's value.

@@ -30,7 +30,7 @@ CrackPay: a self-custodial USD stablecoin wallet on **Arc** (Circle's L1, where 
 | Gas | Circle Gas Station | `paymaster: true` on every userOp |
 | Payments SDK | Circle App Kit + viem adapter | Send, Swap, Bridge, Unified Balance, Earn |
 | Backend | Supabase (Postgres, Auth, Edge Functions, Realtime) | |
-| Contracts | Solidity + Foundry | |
+| Contracts | Solidity + Arc Foundry | Circle's Foundry fork: `arc-forge`, `arc-cast`, `arc-anvil` |
 | Hosting | Vercel | |
 
 Do not introduce ethers.js, web3.js, Hardhat, or a second state library. Do not add a database ORM beyond the Supabase client.
@@ -116,7 +116,7 @@ Violating any of these produces bugs that look like something else. Re-read befo
 - **Errors are typed and surfaced.** Never swallow a chain error into a generic "Something went wrong" without logging the real one.
 - **Server-side secrets stay server-side.** Phone salts, Circle secret keys, and the attestation signing key never reach the client bundle. Audit `NEXT_PUBLIC_` usage.
 - **Commits:** conventional commits (`feat:`, `fix:`, `chore:`).
-- Run `pnpm typecheck && pnpm lint` before declaring a task done. For contracts, `forge test`.
+- Run `pnpm typecheck && pnpm lint` before declaring a task done. For contracts, `arc-forge test`.
 
 ---
 
