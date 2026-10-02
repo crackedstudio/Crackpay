@@ -1,6 +1,7 @@
 import { privateKeyToAccount } from "viem/accounts";
 import type { Hex } from "viem";
 import { contracts } from "../../config/contracts";
+import { ONBOARDING_MODE } from "../../config/onboarding";
 import { identityRegistryAbi } from "../../config/identity";
 import { arcChain, publicClient } from "../arc";
 import { ServerConfigError, requireEnv } from "./errors";
@@ -26,6 +27,9 @@ function createStore(): Store {
 
 /** Twilio Verify when its three variables are set; otherwise nothing. */
 function createVerifier(): CodeVerifier | undefined {
+  // Passkey-only onboarding never sends a code, so it needs no SMS provider.
+  if (ONBOARDING_MODE === "passkey") return undefined;
+
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
