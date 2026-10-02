@@ -1,0 +1,23 @@
+# CrackPay Mini Apps
+
+> Developer documentation for building web apps that run inside CrackPay, the USD stablecoin wallet on Arc.
+
+AI coding assistants: read [SKILL.md](/developers/SKILL.md) first. It has every rule and code pattern in one file.
+
+## Getting started
+
+- [Overview](/developers/overview.md): What a Mini App is, how it talks to the wallet, network details.
+- [Quick start](/developers/quick-start.md): Add the SDK, connect, read a balance, send a transaction.
+- [Test in CrackPay](/developers/test-in-crackpay.md): Developer mode, loading a test page, tunnelling a local server.
+
+## Guides
+
+- [Wallet connection](/developers/wallet-connection.md): The provider, auto-connect, wagmi, smart-account caveats.
+- [Transactions and balances](/developers/transactions.md): Arc's USDC decimals, sending, token rules, errors.
+- [UI and container](/developers/ui-and-container.md): Frame size, what the sandbox allows, storage, navigation.
+- [Get listed](/developers/listing.md): The listing file, requirements, review, what happens after.
+
+## Reference
+
+- [Reference](/developers/reference.md): Supported methods, events, error codes, limits.
+- [SDK script](/miniapp-sdk.js): The script Mini Apps load.

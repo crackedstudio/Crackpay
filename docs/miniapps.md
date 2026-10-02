@@ -1,5 +1,10 @@
 # Mini Apps
 
+This file is the internal design note. The documentation for outside developers
+is published from `apps/web/public/developers/` and served at
+`/developers` (index), `/developers/*.md`, `/developers/SKILL.md` and
+`/developers/llms.txt`. Keep the two in step when behaviour changes.
+
 A Mini App is a web app on its own origin that CrackPay loads in an iframe and
 gives a wallet to. The first one is KashLink, added early to exercise the
 wallet during testing; Discover, submission and review are still Phase 3.
@@ -44,6 +49,37 @@ Mini App (iframe, its own origin)            CrackPay page
 - **Keys** never leave the CrackPay page.
 - **Kill switch.** `enabled: false` in the registry removes an app from the list,
   the route and the CSP.
+
+## Developer mode
+
+Modelled on MiniPay. Settings → tap Version seven times → Developer settings →
+Developer mode → Load test page. That opens `/apps/test?url=…`, which wraps the
+URL as a Mini App with an **unrestricted** policy: any contract may be called.
+What protects the user there is the prompt, which shows the raw contract address
+and a "not reviewed" warning, plus the red bar on the frame.
+
+- `/apps/test` is the only route whose CSP allows framing any HTTPS site (or
+  localhost). The settings page opens it with a full page load, and the test bar
+  leaves it with one, because a client-side navigation keeps the previous
+  document's CSP.
+- Listed apps are unaffected: `unrestricted` is never set in the registry, and a
+  test asserts that.
+- Before mainnet, decide whether Developer mode stays available there. Today it
+  is safe mainly because the chain is a testnet.
+
+## The hosted SDK
+
+`public/miniapp-sdk.js` is generated from `src/lib/miniapp/sdk.ts` by
+`pnpm build:sdk`. A test fails if the two drift. The script trusts the origin it
+was loaded from, so a Mini App that includes it from a given CrackPay host works
+only inside that host.
+
+## Listing an app
+
+Add an entry to `src/config/miniapps.ts` from the developer's listing file:
+`url`, and a policy with every contract in `contracts` and each token in
+`tokenApprovals`. Deploying is what whitelists it; the CSP is built from the
+registry.
 
 ## Not supported yet
 

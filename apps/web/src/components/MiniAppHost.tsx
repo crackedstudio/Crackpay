@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { arcChain, publicClient } from "@/lib/arc";
 import { handleRequest, toWireError } from "@/lib/miniapp/bridge";
@@ -17,18 +18,34 @@ type Pending = { summary: TransactionSummary; resolve: (approved: boolean) => vo
 const UNLIMITED = 1n << 128n;
 
 function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }) {
+  if (summary.kind === "transfer") {
+    return (
+      <>
+        <p className="text-2xl font-semibold">
+          {formatAmountExact(summary.amount)} {summary.token.symbol}
+        </p>
+        <p>
+          will leave your balance and go to <span className="break-all font-mono">{summary.to}</span>.
+        </p>
+      </>
+    );
+  }
   if (summary.kind === "approve") {
     const amount = summary.amount >= UNLIMITED ? "an unlimited amount of" : formatAmountExact(summary.amount);
     return (
       <p>
-        Allow {app.name} to spend {amount} {summary.token.symbol} from your balance.
+        Allow {app.test ? <span className="break-all font-mono">{summary.spender}</span> : app.name} to spend {amount}{" "}
+        {summary.token.symbol} from your balance.
       </p>
     );
   }
   return (
     <>
       <p className="text-2xl font-semibold">{formatAmountExact(nativeToBaseCeil(summary.value))} USDC</p>
-      <p>will leave your balance and go to {app.name}.</p>
+      <p>
+        will leave your balance and go to{" "}
+        {app.test ? <span className="break-all font-mono">{summary.to}</span> : app.name}.
+      </p>
     </>
   );
 }
@@ -114,6 +131,22 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
   const button = "flex-1 rounded px-3 py-2";
   return (
     <div className="relative mx-auto flex w-full max-w-[420px] flex-1 flex-col">
+      {app.test ? (
+        <div className="flex items-center justify-between gap-3 bg-danger px-4 py-2 text-xs text-white">
+          <span className="truncate">Test app · {new URL(app.url).host} · not reviewed</span>
+          {/* A full page load, so the looser frame policy of the test route does not carry over. */}
+          <a href="/settings/developer" className="shrink-0 underline">
+            Close
+          </a>
+        </div>
+      ) : (
+        <header className="flex h-12 items-center gap-2 border-b border-line px-3">
+          <Link href="/apps" aria-label="Back to apps" className="flex h-10 w-10 items-center justify-center rounded-full text-xl">
+            ←
+          </Link>
+          <span className="truncate font-medium">{app.name}</span>
+        </header>
+      )}
       {src && (
         <iframe
           ref={frame}
@@ -137,6 +170,12 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
                   {app.name} · {new URL(app.url).host}
                 </p>
                 <Summary app={app} summary={pending.summary} />
+                {app.test && (
+                  <p className="rounded-xl border border-danger p-3 text-danger">
+                    This is a test app loaded in Developer mode. CrackPay has not reviewed it and has not checked the
+                    contract it is calling. Only confirm if it is your own app.
+                  </p>
+                )}
                 <div className="flex gap-2">
                   <button className={`${button} border border-neutral-400`} onClick={() => decide(false)}>
                     Cancel
