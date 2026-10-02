@@ -18,3 +18,7 @@ export function loadCredential(): P256Credential | null {
 export function saveCredential(credential: P256Credential): void {
   localStorage.setItem(CREDENTIAL_KEY, JSON.stringify(credential));
 }
+
+export function clearCredential(): void {
+  localStorage.removeItem(CREDENTIAL_KEY);
+}

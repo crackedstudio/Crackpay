@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { arcChain, publicClient } from "@/lib/arc";
 import { handleRequest, toWireError } from "@/lib/miniapp/bridge";
+import { RpcError } from "@/lib/miniapp/errors";
 import { checkTransaction, type TransactionSummary } from "@/lib/miniapp/policy";
 import { envelope, isMiniAppMessage, type MiniAppMessage } from "@/lib/miniapp/sdk";
 import { formatAmountExact, nativeToBaseCeil } from "@/lib/money";
@@ -66,7 +67,11 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
       async send(tx: Parameters<typeof checkTransaction>[1]) {
         setSending(true);
         try {
-          return await sendSponsoredUserOp(account, [tx]);
+          const result = await sendSponsoredUserOp(account, [tx]);
+          if (result.status === "submitted_no_receipt") {
+            throw new RpcError(-32603, `Operation ${result.userOpHash} was submitted but never confirmed`);
+          }
+          return { transactionHash: result.transactionHash, success: result.status === "confirmed" };
         } finally {
           setSending(false);
         }

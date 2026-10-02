@@ -7,7 +7,7 @@ import { parseRecipient } from "@/lib/address";
 import { arcChain } from "@/lib/arc";
 import { formatAmountExact, parseAmount } from "@/lib/money";
 import { loadCredential, saveCredential } from "@/lib/session";
-import { sendUsdc } from "@/lib/userop";
+import { sendUsdc, type UserOpResult } from "@/lib/userop";
 import {
   loginWithPasskey,
   registerPasskey,
@@ -18,7 +18,6 @@ import {
 const AMOUNT = parseAmount("0.1");
 const explorer = arcChain.blockExplorers.default.url;
 
-type Result = { userOpHash: string; transactionHash: string; success: boolean };
 
 function describe(error: unknown): string {
   console.error(error);
@@ -29,7 +28,7 @@ export default function WalletSpike() {
   const [account, setAccount] = useState<CrackPaySmartAccount | null>(null);
   const [username, setUsername] = useState("");
   const [recipient, setRecipient] = useState("");
-  const [result, setResult] = useState<Result | null>(null);
+  const [result, setResult] = useState<UserOpResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -119,16 +118,18 @@ export default function WalletSpike() {
 
       {result && (
         <p className="break-all">
-          {result.success ? "Sent." : "UserOp reverted."} userOp{" "}
-          <span className="font-mono">{result.userOpHash}</span>
-          <a
-            className="block font-mono underline"
-            href={`${explorer}/tx/${result.transactionHash}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {result.transactionHash}
-          </a>
+          {result.status === "confirmed" ? "Sent." : result.status === "reverted" ? "UserOp reverted." : "Submitted, no receipt."}{" "}
+          userOp <span className="font-mono">{result.userOpHash}</span>
+          {result.status !== "submitted_no_receipt" && (
+            <a
+              className="block font-mono underline"
+              href={`${explorer}/tx/${result.transactionHash}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {result.transactionHash}
+            </a>
+          )}
         </p>
       )}
       {error && <p className="break-words text-red-600">{error}</p>}

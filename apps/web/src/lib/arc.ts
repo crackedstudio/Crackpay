@@ -3,10 +3,22 @@ import {
   createWalletClient,
   http,
   type Account,
+  type Chain,
 } from "viem";
 import { arcTestnet } from "viem/chains";
 
-export const arcChain = arcTestnet;
+// viem's entry still points at the pre-launch explorer; Arc's docs name this one.
+// Source: https://docs.arc.io/arc/references/connect-to-arc, retrieved 2026-10-02.
+export const arcChain = {
+  ...arcTestnet,
+  blockExplorers: {
+    default: {
+      name: "Arc Testnet Explorer",
+      url: "https://explorer.testnet.arc.io",
+      apiUrl: "https://explorer.testnet.arc.io/api/v2",
+    },
+  },
+} as const satisfies Chain;
 
 export class ArcConfigError extends Error {
   override name = "ArcConfigError";
