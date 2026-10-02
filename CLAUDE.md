@@ -30,7 +30,7 @@ CrackPay: a self-custodial USD stablecoin wallet on **Arc** (Circle's L1, where 
 | Gas | Circle Gas Station | `paymaster: true` on every userOp |
 | Payments SDK | Circle App Kit + viem adapter | Send, Swap, Bridge, Unified Balance, Earn |
 | Backend | Supabase (Postgres, Auth, Edge Functions, Realtime) | |
-| Contracts | Solidity + Arc Foundry | Circle's Foundry fork: `arc-forge`, `arc-cast`, `arc-anvil` |
+| Contracts | Solidity + Arc Foundry + OpenZeppelin Contracts v5 | Circle's Foundry fork: `arc-forge`, `arc-cast`, `arc-anvil`. Use OpenZeppelin for signatures, EIP-712 and access control rather than hand-rolling |
 | Hosting | Vercel | |
 
 Do not introduce ethers.js, web3.js, Hardhat, or a second state library. Do not add a database ORM beyond the Supabase client.

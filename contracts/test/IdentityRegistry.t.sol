@@ -2,6 +2,7 @@
 pragma solidity 0.8.30;
 
 import {Test} from "forge-std/Test.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IdentityRegistry} from "../src/IdentityRegistry.sol";
 
 contract IdentityRegistryTest is Test {
@@ -702,7 +703,7 @@ contract IdentityRegistryTest is Test {
         _register(bob, BOB_PHONE, "bob");
         uint256 readyAt = _initiate(newAlice);
 
-        vm.expectRevert(IdentityRegistry.NotOwner.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
         vm.prank(alice);
         registry.setRecoveryPaused(true);
 
@@ -749,7 +750,7 @@ contract IdentityRegistryTest is Test {
     }
 
     function test_RecoveryDelayGuards() public {
-        vm.expectRevert(IdentityRegistry.NotOwner.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
         vm.prank(alice);
         registry.setRecoveryDelay(2 days);
 
@@ -779,7 +780,7 @@ contract IdentityRegistryTest is Test {
     }
 
     function test_AttesterKeysStaySeparate() public {
-        vm.expectRevert(IdentityRegistry.NotOwner.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
         vm.prank(alice);
         registry.setRecoveryAttester(alice);
 
@@ -798,7 +799,7 @@ contract IdentityRegistryTest is Test {
     // ------------------------------------------------------------------
 
     function test_ConstructorGuards() public {
-        vm.expectRevert(IdentityRegistry.ZeroAddress.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
         new IdentityRegistry(address(0), attester, recoveryAttester, DELAY);
         vm.expectRevert(IdentityRegistry.ZeroAddress.selector);
         new IdentityRegistry(owner, address(0), recoveryAttester, DELAY);
@@ -825,7 +826,7 @@ contract IdentityRegistryTest is Test {
     }
 
     function test_SetAttesterGuards() public {
-        vm.expectRevert(IdentityRegistry.NotOwner.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
         vm.prank(alice);
         registry.setAttester(alice);
 
@@ -835,7 +836,7 @@ contract IdentityRegistryTest is Test {
     }
 
     function test_OwnershipTransferIsTwoStep() public {
-        vm.expectRevert(IdentityRegistry.NotOwner.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
         vm.prank(alice);
         registry.transferOwnership(alice);
 
@@ -843,7 +844,7 @@ contract IdentityRegistryTest is Test {
         registry.transferOwnership(alice);
         assertEq(registry.owner(), owner);
 
-        vm.expectRevert(IdentityRegistry.NotPendingOwner.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
         vm.prank(bob);
         registry.acceptOwnership();
 
@@ -851,6 +852,17 @@ contract IdentityRegistryTest is Test {
         registry.acceptOwnership();
         assertEq(registry.owner(), alice);
         assertEq(registry.pendingOwner(), address(0));
+    }
+
+    function test_OwnershipCannotBeRenounced() public {
+        vm.expectRevert(IdentityRegistry.RenounceDisabled.selector);
+        vm.prank(owner);
+        registry.renounceOwnership();
+
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+        vm.prank(alice);
+        registry.renounceOwnership();
+        assertEq(registry.owner(), owner);
     }
 
     // ------------------------------------------------------------------

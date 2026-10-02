@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.30;
 
+import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+
 /// @title IdentityRegistry
 /// @notice Binds a CrackPay smart account to a phone hash and a handle.
 /// @dev Registration needs an EIP-712 attestation from the backend, issued after
@@ -14,7 +18,7 @@ pragma solidity 0.8.30;
 ///    presents an attestation from a separate recovery key, then waits out a
 ///    timelock during which the current account or the owner can cancel.
 /// Neither path moves funds; they only change where the identity resolves.
-contract IdentityRegistry {
+contract IdentityRegistry is Ownable2Step, EIP712 {
     struct Identity {
         bytes32 phoneHash;
         string handle;
@@ -29,10 +33,6 @@ contract IdentityRegistry {
         keccak256("Registration(address account,bytes32 phoneHash,string handle,uint256 deadline)");
     bytes32 public constant RECOVERY_TYPEHASH =
         keccak256("Recovery(bytes32 phoneHash,address newAccount,uint256 nonce,uint256 deadline)");
-    bytes32 private constant DOMAIN_TYPEHASH =
-        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    bytes32 private constant NAME_HASH = keccak256("CrackPay IdentityRegistry");
-    bytes32 private constant VERSION_HASH = keccak256("1");
 
     uint256 public constant MIN_HANDLE_LENGTH = 3;
     uint256 public constant MAX_HANDLE_LENGTH = 20;
@@ -42,11 +42,6 @@ contract IdentityRegistry {
     /// @notice How long a recovery stays executable once its timelock has passed.
     uint256 public constant RECOVERY_WINDOW = 7 days;
 
-    /// @dev secp256k1n / 2. Signatures with a higher s are rejected as malleable.
-    uint256 private constant MAX_S = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
-
-    address public owner;
-    address public pendingOwner;
     /// @notice Backend key that signs registration attestations.
     address public attester;
     /// @notice Key that signs recovery attestations. Always distinct from `attester`.
@@ -78,12 +73,8 @@ contract IdentityRegistry {
     event RecoveryAttesterUpdated(address indexed previousAttester, address indexed newAttester);
     event RecoveryDelayUpdated(uint256 previousDelay, uint256 newDelay);
     event RecoveryPausedSet(bool paused);
-    event OwnershipTransferStarted(address indexed owner, address indexed pendingOwner);
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     error ZeroAddress();
-    error NotOwner();
-    error NotPendingOwner();
     error AttestationExpired();
     error InvalidAttestation();
     error InvalidPhoneHash();
@@ -102,28 +93,25 @@ contract IdentityRegistry {
     error RecoveryNotReady();
     error RecoveryExpired();
     error NotAuthorized();
-
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert NotOwner();
-        _;
-    }
+    error RenounceDisabled();
 
     modifier whenRecoveryActive() {
         if (recoveryPaused) revert RecoveryIsPaused();
         _;
     }
 
-    constructor(address owner_, address attester_, address recoveryAttester_, uint256 recoveryDelay_) {
-        if (owner_ == address(0) || attester_ == address(0) || recoveryAttester_ == address(0)) revert ZeroAddress();
+    constructor(address owner_, address attester_, address recoveryAttester_, uint256 recoveryDelay_)
+        Ownable(owner_)
+        EIP712("CrackPay IdentityRegistry", "1")
+    {
+        if (attester_ == address(0) || recoveryAttester_ == address(0)) revert ZeroAddress();
         if (attester_ == recoveryAttester_) revert AttestersMustDiffer();
         _checkRecoveryDelay(recoveryDelay_);
 
-        owner = owner_;
         attester = attester_;
         recoveryAttester = recoveryAttester_;
         recoveryDelay = recoveryDelay_;
 
-        emit OwnershipTransferred(address(0), owner_);
         emit AttesterUpdated(address(0), attester_);
         emit RecoveryAttesterUpdated(address(0), recoveryAttester_);
         emit RecoveryDelayUpdated(0, recoveryDelay_);
@@ -221,7 +209,7 @@ contract IdentityRegistry {
     function cancelRecovery(bytes32 phoneHash) external {
         address newAccount = _recoveries[phoneHash].newAccount;
         if (newAccount == address(0)) revert NoPendingRecovery();
-        if (msg.sender != _accountByPhone[phoneHash] && msg.sender != owner) revert NotAuthorized();
+        if (msg.sender != _accountByPhone[phoneHash] && msg.sender != owner()) revert NotAuthorized();
 
         delete _recoveries[phoneHash];
         emit RecoveryCancelled(phoneHash, newAccount, msg.sender);
@@ -303,7 +291,7 @@ contract IdentityRegistry {
         view
         returns (bytes32)
     {
-        return _typedDataHash(
+        return _hashTypedDataV4(
             keccak256(abi.encode(REGISTRATION_TYPEHASH, account, phoneHash, keccak256(bytes(handle)), deadline))
         );
     }
@@ -314,11 +302,11 @@ contract IdentityRegistry {
         view
         returns (bytes32)
     {
-        return _typedDataHash(keccak256(abi.encode(RECOVERY_TYPEHASH, phoneHash, newAccount, nonce, deadline)));
+        return _hashTypedDataV4(keccak256(abi.encode(RECOVERY_TYPEHASH, phoneHash, newAccount, nonce, deadline)));
     }
 
-    function domainSeparator() public view returns (bytes32) {
-        return keccak256(abi.encode(DOMAIN_TYPEHASH, NAME_HASH, VERSION_HASH, block.chainid, address(this)));
+    function domainSeparator() external view returns (bytes32) {
+        return _domainSeparatorV4();
     }
 
     // ------------------------------------------------------------------
@@ -354,17 +342,10 @@ contract IdentityRegistry {
         emit RecoveryPausedSet(paused);
     }
 
-    /// @notice Starts a two-step ownership transfer. Pass the zero address to cancel one.
-    function transferOwnership(address newOwner) external onlyOwner {
-        pendingOwner = newOwner;
-        emit OwnershipTransferStarted(owner, newOwner);
-    }
-
-    function acceptOwnership() external {
-        if (msg.sender != pendingOwner) revert NotPendingOwner();
-        emit OwnershipTransferred(owner, msg.sender);
-        owner = msg.sender;
-        delete pendingOwner;
+    /// @notice Disabled. Without an owner the attester keys could never be rotated
+    /// and recovery could never be paused.
+    function renounceOwnership() public view override onlyOwner {
+        revert RenounceDisabled();
     }
 
     // ------------------------------------------------------------------
@@ -398,20 +379,9 @@ contract IdentityRegistry {
         return char >= 0x61 && char <= 0x7a;
     }
 
-    function _typedDataHash(bytes32 structHash) private view returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19\x01", domainSeparator(), structHash));
-    }
-
     /// @dev Returns the zero address for any malformed signature. Neither
     /// attester is ever the zero address, so that always fails the comparison.
-    function _recover(bytes32 digest, bytes calldata signature) private pure returns (address) {
-        if (signature.length != 65) return address(0);
-
-        bytes32 r = bytes32(signature[0:32]);
-        bytes32 s = bytes32(signature[32:64]);
-        uint8 v = uint8(signature[64]);
-        if (uint256(s) > MAX_S || (v != 27 && v != 28)) return address(0);
-
-        return ecrecover(digest, v, r, s);
+    function _recover(bytes32 digest, bytes calldata signature) private pure returns (address signer) {
+        (signer,,) = ECDSA.tryRecoverCalldata(digest, signature);
     }
 }
