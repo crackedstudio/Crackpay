@@ -67,12 +67,28 @@ and a "not reviewed" warning, plus the red bar on the frame.
 - Before mainnet, decide whether Developer mode stays available there. Today it
   is safe mainly because the chain is a testnet.
 
-## The hosted SDK
+## The SDK
 
-`public/miniapp-sdk.js` is generated from `src/lib/miniapp/sdk.ts` by
-`pnpm build:sdk`. A test fails if the two drift. The script trusts the origin it
-was loaded from, so a Mini App that includes it from a given CrackPay host works
-only inside that host.
+There is one SDK, delivered three ways from one source file,
+`packages/miniapp-sdk/src/provider.ts`:
+
+| For | What | Built by |
+|---|---|---|
+| Developers with a bundler | npm package `@crackpay/miniapp-sdk` (`.`, `/viem`, `/react`) | `pnpm build` in `packages/miniapp-sdk` |
+| Developers without one | `/miniapp-sdk.js`, a script tag | `pnpm build:sdk` in `apps/web` |
+| The CrackPay host | `apps/web/src/lib/miniapp/sdk.ts` (protocol types and helpers) | `pnpm build:sdk` in `apps/web` |
+
+Edit `provider.ts`, then run `pnpm build:sdk` in `apps/web`. Tests fail if the
+host's copy or the hosted script has drifted, or if the package's chain and token
+constants disagree with the wallet's own config.
+
+The hosted script trusts the origin it was loaded from. The npm package trusts
+`CRACKPAY_ORIGINS` in `packages/miniapp-sdk/src/index.ts`; add the production
+domain there when it exists and release a new version.
+
+The package is **not published yet**. Publishing needs an npm account that owns
+the `@crackpay` scope and a licence choice (`package.json` has no `license`
+field). Until then the public docs describe only the script tag.
 
 ## Submissions
 

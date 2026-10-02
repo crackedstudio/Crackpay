@@ -67,6 +67,25 @@ function fakeWindow(options: { framed: boolean; scriptSrc?: string; hostOrigins?
   return { context, window, posted, dispatched, receive, api };
 }
 
+describe("the three copies of the SDK", () => {
+  const packageDir = "../../packages/miniapp-sdk/src";
+
+  it("keeps the host's copy identical to the npm package's source (run `pnpm build:sdk` if this fails)", () => {
+    expect(readFileSync("src/lib/miniapp/sdk.ts", "utf8")).toBe(readFileSync(`${packageDir}/provider.ts`, "utf8"));
+  });
+
+  it("gives developers the same network facts the wallet itself uses", async () => {
+    const sdk = await import("../../../../../packages/miniapp-sdk/src/index.js");
+    const { contracts } = await import("../../config/contracts");
+    const { arcChain } = await import("../arc");
+
+    expect(sdk.arcTestnet.id).toBe(arcChain.id);
+    expect(sdk.arcTestnet.explorerUrl).toBe(arcChain.blockExplorers.default.url);
+    expect(sdk.tokens.USDC.address).toBe(contracts[arcChain.id].usdc);
+    expect(sdk.tokens.EURC.address).toBe(contracts[arcChain.id].eurc);
+  });
+});
+
 describe("published SDK script", () => {
   it("matches the current sdk.ts (run `pnpm build:sdk` if this fails)", () => {
     expect(published).toBe(buildSdkScript(readFileSync("src/lib/miniapp/sdk.ts", "utf8")));
