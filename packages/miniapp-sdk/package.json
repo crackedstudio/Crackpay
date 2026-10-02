@@ -2,6 +2,7 @@
   "name": "@crackpay/miniapp-sdk",
   "version": "0.1.0",
   "description": "Build Mini Apps that run inside CrackPay, the USD stablecoin wallet on Arc.",
+  "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -10,7 +11,7 @@
     "./react": { "types": "./dist/react.d.ts", "import": "./dist/react.js" }
   },
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": ["dist", "README.md", "LICENSE"],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",

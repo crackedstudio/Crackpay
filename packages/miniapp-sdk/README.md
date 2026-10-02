@@ -124,3 +124,7 @@ getCrackPayProvider({ hostOrigins: ["http://localhost:3000"] });
   window.crackpay.ready.then((provider) => { /* same provider, or null */ });
 </script>
 ```
+
+## License
+
+MIT
