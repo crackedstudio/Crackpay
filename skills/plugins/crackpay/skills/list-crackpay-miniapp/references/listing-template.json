@@ -1,0 +1,23 @@
+{
+  "name": "",
+  "tagline": "",
+  "publisher": "",
+  "category": "finance",
+  "url": "https://",
+  "icon": "https://",
+  "supportUrl": "https://",
+  "termsUrl": "https://",
+  "privacyUrl": "https://",
+  "network": "arc-testnet",
+  "contracts": [
+    {
+      "address": "0x",
+      "name": "",
+      "purpose": "",
+      "explorerUrl": "https://explorer.testnet.arc.io/address/0x",
+      "sampleTransactions": []
+    }
+  ],
+  "tokenApprovals": [],
+  "origins": []
+}

@@ -1,0 +1,15 @@
+{
+  "name": "crackpay",
+  "owner": { "name": "Cracked Studios" },
+  "metadata": {
+    "description": "Skills for building Mini Apps that run inside CrackPay, the USD stablecoin wallet on Arc.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "crackpay-skills",
+      "source": "./plugins/crackpay",
+      "description": "Build, test and list Mini Apps for CrackPay with the @crackpay/miniapp-sdk: wallet connection, USDC payments on Arc, Developer mode and listing."
+    }
+  ]
+}

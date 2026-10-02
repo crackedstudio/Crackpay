@@ -92,6 +92,24 @@ To release: bump `version` in `packages/miniapp-sdk/package.json`, then run
 `npm publish` in that folder. It runs typecheck, tests and build first, and the
 account's 2FA asks for approval in the browser, so a person has to run it.
 
+## Developer skills
+
+`skills/` is a self-contained skills repository for AI coding assistants, laid
+out like `circlefin/skills`: a Claude Code marketplace manifest at
+`skills/.claude-plugin/marketplace.json` and one plugin, `plugins/crackpay`, with
+six skills (build, SDK, transactions, test, list, port from MiniPay) and a
+Vite + React starter under `build-crackpay-miniapp/assets/starter`.
+
+Developers need it in a **public** repository to install it
+(`npx skills add <owner>/<repo>` or `/plugin marketplace add <owner>/<repo>`).
+This monorepo is private, so publish by copying `skills/` to the root of a public
+repository. The README assumes `crackedstudio/crackpay-skills`.
+
+`apps/web/src/lib/miniapp/skills.test.ts` fails when the skills drift from the
+wallet: addresses, chain ID, Developer mode steps, listing template, forwarded
+RPC methods and the starter's SDK version. When the SDK version or the CrackPay
+domain changes, update the skills and the single-file `/developers/SKILL.md`.
+
 ## Submissions
 
 Developers submit a listing file at `/developers/submit`. It is validated by
