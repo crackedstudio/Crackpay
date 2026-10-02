@@ -86,9 +86,11 @@ The hosted script trusts the origin it was loaded from. The npm package trusts
 `CRACKPAY_ORIGINS` in `packages/miniapp-sdk/src/index.ts`; add the production
 domain there when it exists and release a new version.
 
-The package is MIT licensed and **not published yet**. Publishing needs an npm
-account that owns the `@crackpay` scope. Until then the public docs describe only
-the script tag.
+The package is MIT licensed and published as `@crackpay/miniapp-sdk` under the
+`crackpay` npm organisation (owner account `eagle1`; 0.1.0 on 2 October 2026).
+To release: bump `version` in `packages/miniapp-sdk/package.json`, then run
+`npm publish` in that folder. It runs typecheck, tests and build first, and the
+account's 2FA asks for approval in the browser, so a person has to run it.
 
 ## Submissions
 

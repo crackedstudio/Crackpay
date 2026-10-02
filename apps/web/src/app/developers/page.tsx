@@ -38,11 +38,11 @@ export default function Developers() {
   return (
     <Screen title="Build Mini Apps" back="/">
       <p className="text-muted">
-        A Mini App is a web app that runs inside CrackPay and uses the CrackPay user&apos;s wallet. Add one script, and
+        A Mini App is a web app that runs inside CrackPay and uses the CrackPay user&apos;s wallet. Install the SDK, and
         your app is connected the moment it loads.
       </p>
       <pre className="overflow-x-auto rounded-2xl border border-line bg-card p-4 text-xs">
-        {'<script src="https://crackpay.vercel.app/miniapp-sdk.js"></script>'}
+        npm install @crackpay/miniapp-sdk
       </pre>
       <LinkButton href="/developers/submit">Submit a Mini App</LinkButton>
       {sections.map((section) => (

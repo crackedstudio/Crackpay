@@ -21,4 +21,5 @@ AI coding assistants: read [SKILL.md](/developers/SKILL.md) first. It has every 
 ## Reference
 
 - [Reference](/developers/reference.md): Supported methods, events, error codes, limits.
-- [SDK script](/miniapp-sdk.js): The script Mini Apps load.
+- [npm package](https://www.npmjs.com/package/@crackpay/miniapp-sdk): `@crackpay/miniapp-sdk`, with `/viem` and `/react` entry points.
+- [SDK script](/miniapp-sdk.js): The same SDK as a script tag, for pages without a bundler.

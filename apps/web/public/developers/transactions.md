@@ -24,16 +24,20 @@ Full details: [Arc's EVM differences](https://docs.arc.io/arc/references/evm-dif
 ## Reading a balance
 
 ```ts
+import { tokens } from "@crackpay/miniapp-sdk";
 import { erc20Abi, formatUnits } from "viem";
 
-const USDC = "0x3600000000000000000000000000000000000000";
-
-const raw = await reader.readContract({ address: USDC, abi: erc20Abi, functionName: "balanceOf", args: [account] });
-const dollars = formatUnits(raw, 6);
+const raw = await publicClient.readContract({
+  address: tokens.USDC.address,
+  abi: erc20Abi,
+  functionName: "balanceOf",
+  args: [account],
+});
+const dollars = formatUnits(raw, tokens.USDC.decimals);
 ```
 
-Read through your own public client (`http()` transport) or through the
-provider; both work.
+`publicClient` here is the one `connectCrackPay()` returns. Reading through the
+provider works too.
 
 ## Sending a transaction
 
@@ -104,14 +108,20 @@ Match on `error.code`, not on message text.
 | `-32603` | The call reverted, was never confirmed, or something failed in CrackPay | "The payment didn't go through." The message has detail for your logs. |
 
 ```ts
+import { ErrorCode, errorCode, isUserRejection } from "@crackpay/miniapp-sdk";
+
 try {
-  await provider.request({ method: "eth_sendTransaction", params: [tx] });
+  await walletClient.writeContract(/* … */);
 } catch (error) {
-  if (error.code === 4001) return show("Cancelled.");
+  if (isUserRejection(error)) return show("Cancelled.");
+  if (errorCode(error) === ErrorCode.Unauthorized) console.error("Contract is not in this app's listing");
   console.error(error);
   show("The payment didn't go through. Please try again.");
 }
 ```
+
+`errorCode` finds the code whether the error came straight from the provider or
+wrapped by viem or wagmi.
 
 A `-32603` that says the operation "was submitted but never confirmed" is
 special: the payment may or may not have happened. Tell the user to check

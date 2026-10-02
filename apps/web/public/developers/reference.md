@@ -1,12 +1,37 @@
 # Reference
 
-## `window.crackpay`
+## `@crackpay/miniapp-sdk`
 
-Defined by `https://crackpay.vercel.app/miniapp-sdk.js`.
+```bash
+npm install @crackpay/miniapp-sdk
+```
+
+| Export | Description |
+|---|---|
+| `getCrackPayProvider(options?)` | `Promise<Provider \| null>`. The provider inside CrackPay, `null` elsewhere. Resolves within 3 seconds. Never prompts. |
+| `isFramed()` | `boolean`. Whether the page is in a frame. Synchronous. |
+| `CRACKPAY_ORIGINS` | The CrackPay hosts the package trusts by default. |
+| `arcTestnet` | `{ id, hexId, name, rpcUrl, explorerUrl, faucetUrl }` |
+| `tokens` | `tokens.USDC` and `tokens.EURC`: `{ symbol, address, decimals }` |
+| `NATIVE_USDC_DECIMALS` | `18`. USDC's scale as a transaction `value`. |
+| `ErrorCode` | Named error codes. See below. |
+| `errorCode(error)` | The numeric code of an error, even when wrapped by viem or wagmi. |
+| `isUserRejection(error)` | `true` when the user cancelled. |
+
+Options: `hostOrigins` (CrackPay hosts to accept) and `timeoutMs` (default `3000`).
+
+| Entry point | Export | Needs |
+|---|---|---|
+| `@crackpay/miniapp-sdk/viem` | `connectCrackPay(options?)` → `{ provider, account, walletClient, publicClient }` or `null` | `viem` |
+| `@crackpay/miniapp-sdk/react` | `useCrackPay(options?)` → `{ status, provider?, account?, error? }` | `react` |
+
+## `window.crackpay` (script tag)
+
+Defined by `https://crackpay.vercel.app/miniapp-sdk.js`, for pages without a bundler.
 
 | Member | Type | Description |
 |---|---|---|
-| `ready` | `Promise<Provider \| null>` | The provider inside CrackPay, `null` elsewhere. Resolves within 3 seconds. |
+| `ready` | `Promise<Provider \| null>` | Same result as `getCrackPayProvider()`. |
 | `version` | `number` | Protocol version. Currently `1`. |
 
 ## Provider
@@ -58,14 +83,14 @@ session. Subscribing is harmless.
 
 ## Error codes
 
-| Code | Name | Meaning |
+| Code | `ErrorCode.` | Meaning |
 |---|---|---|
-| `4001` | User rejected | Cancelled the confirmation or the passkey prompt |
-| `4100` | Unauthorized | Not allowed by your app's listing |
-| `4200` | Unsupported method | |
-| `4902` | Unrecognized chain | Only Arc is available |
-| `-32602` | Invalid params | |
-| `-32603` | Internal error | Reverted, never confirmed, or a failure inside CrackPay |
+| `4001` | `UserRejected` | Cancelled the confirmation or the passkey prompt |
+| `4100` | `Unauthorized` | Not allowed by your app's listing |
+| `4200` | `UnsupportedMethod` | |
+| `4902` | `UnrecognizedChain` | Only Arc is available |
+| `-32602` | `InvalidParams` | |
+| `-32603` | `Internal` | Reverted, never confirmed, or a failure inside CrackPay |
 
 ## Not available yet
 

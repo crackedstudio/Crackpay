@@ -91,9 +91,10 @@ not in your listing.
 - **Console.** Your app is a frame in a normal browser. Open the browser's
   developer tools and select your frame in the console's context menu. On a
   phone, use Chrome remote debugging or Safari Web Inspector.
-- **`window.crackpay.ready` resolves to `null`.** Your page is not inside
-  CrackPay, or the SDK script was loaded from a different CrackPay address than
-  the one framing you. Load the script from the same CrackPay you test in.
+- **`getCrackPayProvider()` resolves to `null`.** Your page is not inside
+  CrackPay, or it is inside a CrackPay the SDK does not trust. The package trusts
+  `https://crackpay.vercel.app`; for any other host pass `hostOrigins`. With the
+  script tag, load the script from the same CrackPay you test in.
 - **A blank frame.** Your server is refusing to be framed. Check
   `X-Frame-Options` and `frame-ancestors`; see [UI and container](./ui-and-container.md).
 - **Error 4100.** The call is not allowed for your app. In a listed app, the

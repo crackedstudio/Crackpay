@@ -23,7 +23,7 @@ find your app in a directory inside the wallet. The differences are the chain
 
 ```
 Your app (your domain, in a frame)            CrackPay
-  <script src=".../miniapp-sdk.js">             checks the request against your listing
+  @crackpay/miniapp-sdk                         checks the request against your listing
   EIP-1193 provider  ── postMessage ──▶         shows the user a confirmation
                      ◀── postMessage ──         signs with the user's passkey, sends it
 ```
@@ -50,6 +50,7 @@ network it is for.
 | | |
 |---|---|
 | CrackPay | `https://crackpay.vercel.app` |
+| SDK | [`@crackpay/miniapp-sdk`](https://www.npmjs.com/package/@crackpay/miniapp-sdk) on npm |
 | Chain ID | `5042002` (`0x4cef52`) |
 | RPC | `https://rpc.testnet.arc.network` |
 | Explorer | `https://explorer.testnet.arc.io` |

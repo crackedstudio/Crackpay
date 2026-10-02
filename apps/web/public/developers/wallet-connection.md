@@ -5,18 +5,21 @@ and never ask the user to sign a message to prove who they are.
 
 ## Getting the provider
 
-```html
-<script src="https://crackpay.vercel.app/miniapp-sdk.js"></script>
+```bash
+npm install @crackpay/miniapp-sdk
 ```
 
 ```ts
-const provider = await window.crackpay.ready;
+import { getCrackPayProvider } from "@crackpay/miniapp-sdk";
+
+const provider = await getCrackPayProvider();
 ```
 
-`ready` resolves with the provider inside CrackPay and with `null` anywhere
-else, after at most three seconds. Unlike MiniPay, the provider is not present
+It resolves with the provider inside CrackPay and with `null` anywhere else,
+after at most three seconds. Unlike MiniPay, the provider is not present
 synchronously at page load: CrackPay Mini Apps run in a frame, and the provider
-is set up by a short handshake with the CrackPay page. Always wait for `ready`.
+is set up by a short handshake with the CrackPay page. Always await it. Calling
+it from several places is fine; the connection is made once.
 
 Once it resolves with a provider:
 
@@ -26,10 +29,13 @@ Once it resolves with a provider:
   as `CrackPay` (`rdns: "app.crackpay"`), so wallet libraries that discover
   providers will find it.
 
+Using the script tag instead of the package? `await window.crackpay.ready`
+gives you the same provider.
+
 ## Handling "not in CrackPay"
 
 ```ts
-const provider = await window.crackpay.ready;
+const provider = await getCrackPayProvider();
 if (!provider) {
   showMessage("Open this app from CrackPay to use it.");
   return;
@@ -37,7 +43,9 @@ if (!provider) {
 ```
 
 If your app also works as a normal website, use `null` to fall back to your
-usual wallet connection.
+usual wallet connection. `isFramed()` from the package tells you synchronously
+whether the page is in a frame at all, which is useful for choosing what to
+render while you wait.
 
 ## Auto-connect
 
@@ -48,18 +56,40 @@ const [account] = await provider.request({ method: "eth_requestAccounts" });
 This never prompts. `eth_accounts` returns the same single account. The account
 does not change during a session.
 
-## With wagmi
+## With viem
 
-Create the config after `ready`, with CrackPay as the only connector, and
-connect on mount:
+```ts
+import { connectCrackPay } from "@crackpay/miniapp-sdk/viem";
+
+const crackpay = await connectCrackPay();
+if (crackpay) {
+  const { account, walletClient, publicClient } = crackpay;
+}
+```
+
+## With React
 
 ```tsx
+import { useCrackPay } from "@crackpay/miniapp-sdk/react";
+
+const crackpay = useCrackPay();
+// crackpay.status: "connecting" | "connected" | "unavailable" | "error"
+// when connected: crackpay.account and crackpay.provider
+```
+
+## With wagmi
+
+Create the config once the provider has resolved, with CrackPay as the only
+connector, and connect on mount:
+
+```tsx
+import { getCrackPayProvider } from "@crackpay/miniapp-sdk";
 import { createConfig, http, injected, useConnect, useConnectors } from "wagmi";
 import { arcTestnet } from "wagmi/chains";
 import { useEffect, useRef } from "react";
 
 export async function createCrackPayConfig() {
-  const provider = await window.crackpay.ready;
+  const provider = await getCrackPayProvider();
   if (!provider) return null;
 
   return createConfig({
@@ -105,13 +135,14 @@ not a private-key wallet. For your app this means:
 - **A new account has no code** until its first transaction. Do not use
   `eth_getCode` to decide whether an address is a user.
 
-## Without the hosted script
+## Testing against a local CrackPay
 
-The script is generated from one dependency-free TypeScript file. If you would
-rather bundle it, ask the CrackPay team for `sdk.ts` and call
-`installCrackPayProvider({ hostOrigins: ["https://crackpay.vercel.app"] })`.
-If you host your own copy of the script, tell it which CrackPay to trust:
+The package trusts `https://crackpay.vercel.app`. If you run CrackPay itself on
+your machine, name it explicitly:
 
-```html
-<script src="/vendor/miniapp-sdk.js" data-host-origins="https://crackpay.vercel.app"></script>
+```ts
+getCrackPayProvider({ hostOrigins: ["http://localhost:3000"] });
 ```
+
+With the script tag, load the script from the CrackPay you are testing in, or
+set `data-host-origins="http://localhost:3000"` on the tag.

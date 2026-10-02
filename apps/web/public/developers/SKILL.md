@@ -1,6 +1,6 @@
 ---
 name: build-crackpay-miniapp
-description: Build, adapt and test Mini Apps for CrackPay, the USD stablecoin wallet on Arc (Circle's L1 where USDC is the gas token). Use when the user wants to create a CrackPay Mini App, port a MiniPay or other dApp to run inside CrackPay, detect or connect the CrackPay wallet, send transactions or read USDC balances from inside CrackPay, test with CrackPay Developer mode, or prepare a Mini App listing. Triggers on CrackPay, CrackPay Mini App, miniapp-sdk.js, window.crackpay, isCrackPay, Arc Mini App, port from MiniPay.
+description: Build, adapt and test Mini Apps for CrackPay, the USD stablecoin wallet on Arc (Circle's L1 where USDC is the gas token). Use when the user wants to create a CrackPay Mini App, port a MiniPay or other dApp to run inside CrackPay, detect or connect the CrackPay wallet, send transactions or read USDC balances from inside CrackPay, test with CrackPay Developer mode, or prepare a Mini App listing. Triggers on CrackPay, CrackPay Mini App, @crackpay/miniapp-sdk, getCrackPayProvider, connectCrackPay, useCrackPay, miniapp-sdk.js, window.crackpay, isCrackPay, Arc Mini App, port from MiniPay.
 ---
 
 # Build a CrackPay Mini App
@@ -19,7 +19,8 @@ under `https://crackpay.vercel.app/developers/`.
 | | |
 |---|---|
 | CrackPay host | `https://crackpay.vercel.app` |
-| SDK script | `https://crackpay.vercel.app/miniapp-sdk.js` |
+| SDK (npm) | `@crackpay/miniapp-sdk`, entry points `.`, `/viem`, `/react` |
+| SDK (script tag, no bundler) | `https://crackpay.vercel.app/miniapp-sdk.js`, then `await window.crackpay.ready` |
 | Chain | Arc Testnet, ID `5042002` (`0x4cef52`), `arcTestnet` in `viem/chains` |
 | RPC | `https://rpc.testnet.arc.network` |
 | Explorer | `https://explorer.testnet.arc.io` |
@@ -35,9 +36,10 @@ needs mainnet now, say it is not available yet.
 These are not style preferences. Breaking one makes the app fail inside
 CrackPay or fail review.
 
-1. **Wait for `window.crackpay.ready`.** It resolves with an EIP-1193 provider
-   inside CrackPay and with `null` elsewhere. The provider is not available
-   synchronously at page load, because the app runs in a frame.
+1. **Await the provider.** `getCrackPayProvider()` (or `connectCrackPay()`,
+   `useCrackPay()`) resolves with an EIP-1193 provider inside CrackPay and with
+   `null` elsewhere. The provider is not available synchronously at page load,
+   because the app runs in a frame. Never read `window.ethereum` directly at load.
 2. **Auto-connect. No connect button.** `eth_requestAccounts` never prompts.
 3. **No message signing.** `personal_sign`, `eth_sign` and
    `eth_signTypedData*` return error `4200`. Never use a signature for login,
@@ -65,59 +67,73 @@ CrackPay or fail review.
 
 ### 1. Set up
 
-For a new app, scaffold with Vite or Next.js and install `viem` (and `wagmi` if
-the project uses React hooks). For an existing dApp or a MiniPay app, keep its
-stack and change only the wallet layer.
+For a new app, scaffold with Vite or Next.js. For an existing dApp or a MiniPay
+app, keep its stack and change only the wallet layer.
 
-Add the SDK before the app's own scripts:
-
-```html
-<script src="https://crackpay.vercel.app/miniapp-sdk.js"></script>
+```bash
+npm install @crackpay/miniapp-sdk viem
 ```
 
-In Next.js App Router, put it in the root layout with
-`<Script src="…" strategy="beforeInteractive" />`.
+`viem` and `react` are optional peers of the package: `viem` is needed for
+`@crackpay/miniapp-sdk/viem`, `react` for `@crackpay/miniapp-sdk/react`. The
+package is ESM, ships its own types, and is safe to import during server
+rendering (everything resolves to `null` without a browser).
 
-Add the type once:
-
-```ts
-import type { EIP1193Provider } from "viem";
-
-declare global {
-  interface Window {
-    crackpay: { version: number; ready: Promise<(EIP1193Provider & { isCrackPay: true }) | null> };
-  }
-}
-```
+Only for a page with no bundler, use the script tag instead:
+`<script src="https://crackpay.vercel.app/miniapp-sdk.js"></script>` and
+`await window.crackpay.ready` in place of `getCrackPayProvider()`.
 
 ### 2. Connect
 
-Plain viem:
+With viem (preferred):
 
 ```ts
-import { createPublicClient, createWalletClient, custom, http } from "viem";
-import { arcTestnet } from "viem/chains";
+import { connectCrackPay } from "@crackpay/miniapp-sdk/viem";
 
-export async function connectCrackPay() {
-  const provider = await window.crackpay.ready;
-  if (!provider) return null; // not inside CrackPay: show "Open this app in CrackPay"
-
-  const wallet = createWalletClient({ chain: arcTestnet, transport: custom(provider) });
-  const reader = createPublicClient({ chain: arcTestnet, transport: http() });
-  const [account] = await wallet.requestAddresses();
-  return { provider, wallet, reader, account };
+const crackpay = await connectCrackPay();
+if (!crackpay) {
+  // Not inside CrackPay: show "Open this app in CrackPay".
+} else {
+  const { account, walletClient, publicClient, provider } = crackpay;
 }
 ```
 
-wagmi: build the config after `ready`, with CrackPay as the only connector, and
-connect once on mount.
+In React:
+
+```tsx
+import { useCrackPay } from "@crackpay/miniapp-sdk/react";
+
+function App() {
+  const crackpay = useCrackPay();
+  if (crackpay.status === "connecting") return <Loading />;
+  if (crackpay.status === "unavailable") return <p>Open this app from CrackPay.</p>;
+  if (crackpay.status === "error") return <p>Something went wrong.</p>;
+  return <Main account={crackpay.account} provider={crackpay.provider} />;
+}
+```
+
+`useCrackPay` takes the same options as `getCrackPayProvider`; pass a stable
+object (module-level or memoised) or nothing.
+
+The raw provider, for any other library:
 
 ```ts
+import { getCrackPayProvider } from "@crackpay/miniapp-sdk";
+
+const provider = await getCrackPayProvider();
+const [account] = await provider.request({ method: "eth_requestAccounts" });
+```
+
+wagmi: build the config after the provider resolves, with CrackPay as the only
+connector, and connect once on mount.
+
+```ts
+import { getCrackPayProvider } from "@crackpay/miniapp-sdk";
 import { createConfig, http, injected } from "wagmi";
 import { arcTestnet } from "wagmi/chains";
 
 export async function createCrackPayConfig() {
-  const provider = await window.crackpay.ready;
+  const provider = await getCrackPayProvider();
   if (!provider) return null;
   return createConfig({
     chains: [arcTestnet],
@@ -144,21 +160,31 @@ function useAutoConnect() {
 If the app must also work outside CrackPay, treat `null` as "use the normal
 wallet flow". CrackPay is also announced through EIP-6963 (`rdns: "app.crackpay"`).
 
+To test against a CrackPay running locally, pass
+`{ hostOrigins: ["http://localhost:3000"] }`. The default is
+`https://crackpay.vercel.app`.
+
 ### 3. Read balances
 
 ```ts
+import { tokens } from "@crackpay/miniapp-sdk";
 import { erc20Abi, formatUnits } from "viem";
 
-const USDC = "0x3600000000000000000000000000000000000000";
-const raw = await reader.readContract({ address: USDC, abi: erc20Abi, functionName: "balanceOf", args: [account] });
-const dollars = formatUnits(raw, 6);
+const raw = await publicClient.readContract({
+  address: tokens.USDC.address,
+  abi: erc20Abi,
+  functionName: "balanceOf",
+  args: [account],
+});
+const dollars = formatUnits(raw, tokens.USDC.decimals);
 ```
 
 ### 4. Send transactions
 
 ```ts
-const hash = await wallet.writeContract({
+const hash = await walletClient.writeContract({
   account,
+  chain: walletClient.chain,
   address: CONTRACT,
   abi,
   functionName: "pay",
@@ -180,11 +206,17 @@ EntryPoint as `to`. Read the app's events from `logs`.
 ### 5. Handle errors by code
 
 ```ts
-function messageFor(error: { code?: number }): string {
-  if (error.code === 4001) return "Cancelled.";
+import { ErrorCode, errorCode, isUserRejection } from "@crackpay/miniapp-sdk";
+
+function messageFor(error: unknown): string {
+  if (isUserRejection(error)) return "Cancelled.";
+  if (errorCode(error) === ErrorCode.Unauthorized) console.error("Contract is not in this app's listing");
   return "The payment didn't go through. Please try again.";
 }
 ```
+
+`errorCode` reads the code whether the error came from the provider or was
+wrapped by viem or wagmi.
 
 | Code | Meaning |
 |---|---|
@@ -251,7 +283,7 @@ must be `https://` (`supportUrl` may be `mailto:`).
 
 | MiniPay | CrackPay |
 |---|---|
-| `window.ethereum` present at load | `await window.crackpay.ready`, then `window.ethereum` is set |
+| `window.ethereum` present at load | `await getCrackPayProvider()` from `@crackpay/miniapp-sdk`; `window.ethereum` is set after it resolves |
 | `window.ethereum.isMiniPay` | `provider.isCrackPay` |
 | Celo, chain `42220` / `11142220` | Arc Testnet, chain `5042002` |
 | `feeCurrency` on transactions | Remove it. Gas is sponsored. |
@@ -265,8 +297,8 @@ Keep: auto-connect, no connect button, mobile layout, error handling by code.
 
 ## Checklist before saying it is done
 
-- [ ] SDK script loads before app code; all wallet code awaits `window.crackpay.ready`
-- [ ] A clear message when `ready` is `null`
+- [ ] `@crackpay/miniapp-sdk` is installed and all wallet code awaits its provider
+- [ ] A clear message when the provider is `null`
 - [ ] No connect button, no signature request anywhere
 - [ ] No gas estimation, fee fields or gas reserve
 - [ ] Token amounts use 6 decimals; native `value` uses 18
