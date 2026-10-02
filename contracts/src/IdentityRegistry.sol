@@ -7,14 +7,28 @@ pragma solidity 0.8.30;
 /// the phone number passes OTP verification. The phone hash is salted per user
 /// off-chain, so this contract never sees a number and the phone mapping cannot
 /// be enumerated from a list of numbers.
+///
+/// An identity can move to a new account in two ways:
+///  - Migration: the current account proposes, the new account accepts.
+///  - Recovery: for a user who has lost the current account. The new account
+///    presents an attestation from a separate recovery key, then waits out a
+///    timelock during which the current account or the owner can cancel.
+/// Neither path moves funds; they only change where the identity resolves.
 contract IdentityRegistry {
     struct Identity {
         bytes32 phoneHash;
         string handle;
     }
 
+    struct Recovery {
+        address newAccount;
+        uint64 readyAt;
+    }
+
     bytes32 public constant REGISTRATION_TYPEHASH =
         keccak256("Registration(address account,bytes32 phoneHash,string handle,uint256 deadline)");
+    bytes32 public constant RECOVERY_TYPEHASH =
+        keccak256("Recovery(bytes32 phoneHash,address newAccount,uint256 nonce,uint256 deadline)");
     bytes32 private constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 private constant NAME_HASH = keccak256("CrackPay IdentityRegistry");
@@ -23,6 +37,11 @@ contract IdentityRegistry {
     uint256 public constant MIN_HANDLE_LENGTH = 3;
     uint256 public constant MAX_HANDLE_LENGTH = 20;
 
+    uint256 public constant MIN_RECOVERY_DELAY = 1 days;
+    uint256 public constant MAX_RECOVERY_DELAY = 30 days;
+    /// @notice How long a recovery stays executable once its timelock has passed.
+    uint256 public constant RECOVERY_WINDOW = 7 days;
+
     /// @dev secp256k1n / 2. Signatures with a higher s are rejected as malleable.
     uint256 private constant MAX_S = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
 
@@ -30,18 +49,35 @@ contract IdentityRegistry {
     address public pendingOwner;
     /// @notice Backend key that signs registration attestations.
     address public attester;
+    /// @notice Key that signs recovery attestations. Always distinct from `attester`.
+    address public recoveryAttester;
+    /// @notice Timelock applied to recoveries started from now on.
+    uint256 public recoveryDelay;
+    /// @notice When true, recoveries can be neither started nor finalized.
+    bool public recoveryPaused;
 
     /// @notice Destination an account has proposed moving its identity to.
     mapping(address account => address newAccount) public pendingAccount;
+    /// @notice Next nonce a recovery attestation for this identity must carry.
+    mapping(bytes32 phoneHash => uint256 nonce) public recoveryNonce;
 
     mapping(address account => Identity) private _identities;
     mapping(bytes32 phoneHash => address account) private _accountByPhone;
     mapping(bytes32 handleHash => address account) private _accountByHandle;
+    mapping(bytes32 phoneHash => Recovery) private _recoveries;
 
     event Registered(address indexed account, bytes32 indexed phoneHash, string handle);
     event AccountUpdateProposed(address indexed account, address indexed newAccount);
     event AccountUpdated(address indexed previousAccount, address indexed newAccount, string handle);
+    event RecoveryInitiated(
+        bytes32 indexed phoneHash, address indexed currentAccount, address indexed newAccount, uint256 readyAt
+    );
+    event RecoveryCancelled(bytes32 indexed phoneHash, address indexed newAccount, address indexed cancelledBy);
+    event RecoveryFinalized(bytes32 indexed phoneHash, address indexed previousAccount, address indexed newAccount);
     event AttesterUpdated(address indexed previousAttester, address indexed newAttester);
+    event RecoveryAttesterUpdated(address indexed previousAttester, address indexed newAttester);
+    event RecoveryDelayUpdated(uint256 previousDelay, uint256 newDelay);
+    event RecoveryPausedSet(bool paused);
     event OwnershipTransferStarted(address indexed owner, address indexed pendingOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -57,18 +93,40 @@ contract IdentityRegistry {
     error PhoneTaken();
     error HandleTaken();
     error NotPendingAccount();
+    error AttestersMustDiffer();
+    error InvalidRecoveryDelay();
+    error RecoveryIsPaused();
+    error RecoveryAlreadyPending();
+    error NoPendingRecovery();
+    error NotRecoveryAccount();
+    error RecoveryNotReady();
+    error RecoveryExpired();
+    error NotAuthorized();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
         _;
     }
 
-    constructor(address owner_, address attester_) {
-        if (owner_ == address(0) || attester_ == address(0)) revert ZeroAddress();
+    modifier whenRecoveryActive() {
+        if (recoveryPaused) revert RecoveryIsPaused();
+        _;
+    }
+
+    constructor(address owner_, address attester_, address recoveryAttester_, uint256 recoveryDelay_) {
+        if (owner_ == address(0) || attester_ == address(0) || recoveryAttester_ == address(0)) revert ZeroAddress();
+        if (attester_ == recoveryAttester_) revert AttestersMustDiffer();
+        _checkRecoveryDelay(recoveryDelay_);
+
         owner = owner_;
         attester = attester_;
+        recoveryAttester = recoveryAttester_;
+        recoveryDelay = recoveryDelay_;
+
         emit OwnershipTransferred(address(0), owner_);
         emit AttesterUpdated(address(0), attester_);
+        emit RecoveryAttesterUpdated(address(0), recoveryAttester_);
+        emit RecoveryDelayUpdated(0, recoveryDelay_);
     }
 
     // ------------------------------------------------------------------
@@ -101,7 +159,7 @@ contract IdentityRegistry {
     }
 
     // ------------------------------------------------------------------
-    // Account migration
+    // Migration: the user still controls the current account
     // ------------------------------------------------------------------
 
     /// @notice Proposes moving the caller's identity to `newAccount`.
@@ -117,20 +175,71 @@ contract IdentityRegistry {
     }
 
     /// @notice Completes a move proposed by `previousAccount` to the caller.
+    /// Also drops any recovery pending against the identity.
     function acceptAccount(address previousAccount) external {
         if (pendingAccount[previousAccount] != msg.sender) revert NotPendingAccount();
         if (_isRegistered(msg.sender)) revert AlreadyRegistered();
 
-        Identity memory identity = _identities[previousAccount];
+        _move(previousAccount, msg.sender);
+    }
 
-        delete pendingAccount[previousAccount];
-        delete _identities[previousAccount];
+    // ------------------------------------------------------------------
+    // Recovery: the user has lost the current account
+    // ------------------------------------------------------------------
 
-        _identities[msg.sender] = identity;
-        _accountByPhone[identity.phoneHash] = msg.sender;
-        _accountByHandle[keccak256(bytes(identity.handle))] = msg.sender;
+    /// @notice Starts moving the identity behind `phoneHash` to the caller.
+    /// @dev Needs a recovery attestation naming the caller and the identity's
+    /// current nonce. Nothing moves until `recoveryDelay` has passed, and the
+    /// current account or the owner can cancel at any point before then.
+    function initiateRecovery(bytes32 phoneHash, uint256 deadline, bytes calldata signature)
+        external
+        whenRecoveryActive
+    {
+        if (block.timestamp > deadline) revert AttestationExpired();
+        address currentAccount = _accountByPhone[phoneHash];
+        if (currentAccount == address(0)) revert NotRegistered();
+        if (_isRegistered(msg.sender)) revert AlreadyRegistered();
 
-        emit AccountUpdated(previousAccount, msg.sender, identity.handle);
+        Recovery memory pending = _recoveries[phoneHash];
+        if (pending.newAccount != address(0) && block.timestamp <= pending.readyAt + RECOVERY_WINDOW) {
+            revert RecoveryAlreadyPending();
+        }
+
+        // Consuming the nonce here means an attestation starts at most one recovery.
+        uint256 nonce = recoveryNonce[phoneHash]++;
+        bytes32 digest = recoveryDigest(phoneHash, msg.sender, nonce, deadline);
+        if (_recover(digest, signature) != recoveryAttester) revert InvalidAttestation();
+
+        uint64 readyAt = uint64(block.timestamp + recoveryDelay);
+        _recoveries[phoneHash] = Recovery({newAccount: msg.sender, readyAt: readyAt});
+
+        emit RecoveryInitiated(phoneHash, currentAccount, msg.sender, readyAt);
+    }
+
+    /// @notice Cancels the recovery pending against `phoneHash`.
+    /// Callable by the identity's current account or by the owner.
+    function cancelRecovery(bytes32 phoneHash) external {
+        address newAccount = _recoveries[phoneHash].newAccount;
+        if (newAccount == address(0)) revert NoPendingRecovery();
+        if (msg.sender != _accountByPhone[phoneHash] && msg.sender != owner) revert NotAuthorized();
+
+        delete _recoveries[phoneHash];
+        emit RecoveryCancelled(phoneHash, newAccount, msg.sender);
+    }
+
+    /// @notice Completes a recovery once its timelock has passed.
+    /// Callable only by the account the recovery names, within `RECOVERY_WINDOW`.
+    function finalizeRecovery(bytes32 phoneHash) external whenRecoveryActive {
+        Recovery memory pending = _recoveries[phoneHash];
+        if (pending.newAccount == address(0)) revert NoPendingRecovery();
+        if (pending.newAccount != msg.sender) revert NotRecoveryAccount();
+        if (block.timestamp < pending.readyAt) revert RecoveryNotReady();
+        if (block.timestamp > pending.readyAt + RECOVERY_WINDOW) revert RecoveryExpired();
+        if (_isRegistered(msg.sender)) revert AlreadyRegistered();
+
+        address previousAccount = _accountByPhone[phoneHash];
+        emit RecoveryFinalized(phoneHash, previousAccount, msg.sender);
+        _move(previousAccount, msg.sender);
     }
 
     // ------------------------------------------------------------------
@@ -150,6 +259,25 @@ contract IdentityRegistry {
     /// @return handle The handle of `account`, or an empty string.
     function reverse(address account) external view returns (string memory handle) {
         return _identities[account].handle;
+    }
+
+    /// @return phoneHash The phone hash of `account`, or zero.
+    function phoneHashOf(address account) external view returns (bytes32 phoneHash) {
+        return _identities[account].phoneHash;
+    }
+
+    /// @notice The recovery pending against `phoneHash`, if any.
+    /// @return newAccount Zero when nothing is pending.
+    /// @return readyAt Earliest time it can be finalized.
+    /// @return expiresAt Latest time it can be finalized.
+    function recoveryOf(bytes32 phoneHash)
+        external
+        view
+        returns (address newAccount, uint256 readyAt, uint256 expiresAt)
+    {
+        Recovery memory pending = _recoveries[phoneHash];
+        if (pending.newAccount == address(0)) return (address(0), 0, 0);
+        return (pending.newAccount, pending.readyAt, pending.readyAt + RECOVERY_WINDOW);
     }
 
     /// @notice Handles are 3 to 20 characters of a-z, 0-9 and underscore, and
@@ -175,9 +303,18 @@ contract IdentityRegistry {
         view
         returns (bytes32)
     {
-        bytes32 structHash =
-            keccak256(abi.encode(REGISTRATION_TYPEHASH, account, phoneHash, keccak256(bytes(handle)), deadline));
-        return keccak256(abi.encodePacked("\x19\x01", domainSeparator(), structHash));
+        return _typedDataHash(
+            keccak256(abi.encode(REGISTRATION_TYPEHASH, account, phoneHash, keccak256(bytes(handle)), deadline))
+        );
+    }
+
+    /// @notice The EIP-712 digest the recovery attester signs for a recovery.
+    function recoveryDigest(bytes32 phoneHash, address newAccount, uint256 nonce, uint256 deadline)
+        public
+        view
+        returns (bytes32)
+    {
+        return _typedDataHash(keccak256(abi.encode(RECOVERY_TYPEHASH, phoneHash, newAccount, nonce, deadline)));
     }
 
     function domainSeparator() public view returns (bytes32) {
@@ -190,10 +327,34 @@ contract IdentityRegistry {
 
     function setAttester(address newAttester) external onlyOwner {
         if (newAttester == address(0)) revert ZeroAddress();
+        if (newAttester == recoveryAttester) revert AttestersMustDiffer();
         emit AttesterUpdated(attester, newAttester);
         attester = newAttester;
     }
 
+    function setRecoveryAttester(address newAttester) external onlyOwner {
+        if (newAttester == address(0)) revert ZeroAddress();
+        if (newAttester == attester) revert AttestersMustDiffer();
+        emit RecoveryAttesterUpdated(recoveryAttester, newAttester);
+        recoveryAttester = newAttester;
+    }
+
+    /// @notice Changes the timelock for recoveries started after this call.
+    /// Recoveries already pending keep the delay they started with.
+    function setRecoveryDelay(uint256 newDelay) external onlyOwner {
+        _checkRecoveryDelay(newDelay);
+        emit RecoveryDelayUpdated(recoveryDelay, newDelay);
+        recoveryDelay = newDelay;
+    }
+
+    /// @notice Circuit breaker for a compromised recovery key. Cancelling stays
+    /// possible while paused.
+    function setRecoveryPaused(bool paused) external onlyOwner {
+        recoveryPaused = paused;
+        emit RecoveryPausedSet(paused);
+    }
+
+    /// @notice Starts a two-step ownership transfer. Pass the zero address to cancel one.
     function transferOwnership(address newOwner) external onlyOwner {
         pendingOwner = newOwner;
         emit OwnershipTransferStarted(owner, newOwner);
@@ -210,16 +371,39 @@ contract IdentityRegistry {
     // Internals
     // ------------------------------------------------------------------
 
+    /// @dev Moves the whole identity and clears every pending change against it.
+    function _move(address previousAccount, address newAccount) private {
+        Identity memory identity = _identities[previousAccount];
+
+        delete pendingAccount[previousAccount];
+        delete _identities[previousAccount];
+        delete _recoveries[identity.phoneHash];
+
+        _identities[newAccount] = identity;
+        _accountByPhone[identity.phoneHash] = newAccount;
+        _accountByHandle[keccak256(bytes(identity.handle))] = newAccount;
+
+        emit AccountUpdated(previousAccount, newAccount, identity.handle);
+    }
+
     function _isRegistered(address account) private view returns (bool) {
         return _identities[account].phoneHash != bytes32(0);
+    }
+
+    function _checkRecoveryDelay(uint256 delay) private pure {
+        if (delay < MIN_RECOVERY_DELAY || delay > MAX_RECOVERY_DELAY) revert InvalidRecoveryDelay();
     }
 
     function _isLowercaseLetter(bytes1 char) private pure returns (bool) {
         return char >= 0x61 && char <= 0x7a;
     }
 
-    /// @dev Returns the zero address for any malformed signature. The attester
-    /// is never the zero address, so that always fails the comparison.
+    function _typedDataHash(bytes32 structHash) private view returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19\x01", domainSeparator(), structHash));
+    }
+
+    /// @dev Returns the zero address for any malformed signature. Neither
+    /// attester is ever the zero address, so that always fails the comparison.
     function _recover(bytes32 digest, bytes calldata signature) private pure returns (address) {
         if (signature.length != 65) return address(0);
 

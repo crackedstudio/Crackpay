@@ -11,5 +11,10 @@ runs = 1000
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
+[invariant]
+runs = 256
+depth = 64
+fail_on_revert = true
+
 [rpc_endpoints]
 arc_testnet = "https://rpc.testnet.arc.network"

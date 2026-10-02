@@ -9,10 +9,14 @@ contract IdentityRegistryTest is Test {
 
     uint256 internal constant ATTESTER_KEY = 0xA77E57;
     uint256 internal constant FORGER_KEY = 0xF0463D;
+    uint256 internal constant RECOVERY_KEY = 0x4EC0FE4;
+    uint256 internal constant DELAY = 3 days;
+    address internal recoveryAttester = vm.addr(RECOVERY_KEY);
     address internal attester = vm.addr(ATTESTER_KEY);
     address internal owner = makeAddr("owner");
     address internal alice = makeAddr("alice");
     address internal bob = makeAddr("bob");
+    address internal newAlice = makeAddr("new alice");
 
     bytes32 internal constant ALICE_PHONE = keccak256("alice phone");
     bytes32 internal constant BOB_PHONE = keccak256("bob phone");
@@ -22,7 +26,7 @@ contract IdentityRegistryTest is Test {
     bytes internal constant REST_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789_";
 
     function setUp() public {
-        registry = new IdentityRegistry(owner, attester);
+        registry = new IdentityRegistry(owner, attester, recoveryAttester, DELAY);
         deadline = block.timestamp + 10 minutes;
     }
 
@@ -126,7 +130,7 @@ contract IdentityRegistryTest is Test {
     }
 
     function test_AttestationForAnotherRegistryReverts() public {
-        IdentityRegistry other = new IdentityRegistry(owner, attester);
+        IdentityRegistry other = new IdentityRegistry(owner, attester, recoveryAttester, DELAY);
         bytes memory signature = _sign(ATTESTER_KEY, alice, ALICE_PHONE, "alice", deadline);
         vm.expectRevert(IdentityRegistry.InvalidAttestation.selector);
         vm.prank(alice);
@@ -281,7 +285,6 @@ contract IdentityRegistryTest is Test {
 
     function test_AccountUpdatePreservesIdentity() public {
         _register(alice, ALICE_PHONE, "alice");
-        address newAlice = makeAddr("new alice");
 
         vm.expectEmit();
         emit IdentityRegistry.AccountUpdateProposed(alice, newAlice);
@@ -306,7 +309,6 @@ contract IdentityRegistryTest is Test {
 
     function test_OldAccountCanRegisterAgainAfterMoving() public {
         _register(alice, ALICE_PHONE, "alice");
-        address newAlice = makeAddr("new alice");
         vm.prank(alice);
         registry.updateAccount(newAlice);
         vm.prank(newAlice);
@@ -357,7 +359,6 @@ contract IdentityRegistryTest is Test {
 
     function test_ProposalCanBeCancelled() public {
         _register(alice, ALICE_PHONE, "alice");
-        address newAlice = makeAddr("new alice");
         vm.startPrank(alice);
         registry.updateAccount(newAlice);
         registry.updateAccount(address(0));
@@ -389,14 +390,426 @@ contract IdentityRegistryTest is Test {
     }
 
     // ------------------------------------------------------------------
+    // Recovery
+    // ------------------------------------------------------------------
+
+    function _signRecovery(uint256 key, bytes32 phoneHash, address newAccount, uint256 nonce, uint256 deadline_)
+        internal
+        view
+        returns (bytes memory)
+    {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, registry.recoveryDigest(phoneHash, newAccount, nonce, deadline_));
+        return abi.encodePacked(r, s, v);
+    }
+
+    /// Alice is registered and `newAccount` starts a recovery of her identity.
+    function _initiate(address newAccount) internal returns (uint256 readyAt) {
+        bytes memory signature =
+            _signRecovery(RECOVERY_KEY, ALICE_PHONE, newAccount, registry.recoveryNonce(ALICE_PHONE), deadline);
+        vm.prank(newAccount);
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+        (, readyAt,) = registry.recoveryOf(ALICE_PHONE);
+    }
+
+    function _assertAliceUnmoved() internal view {
+        assertEq(registry.resolvePhone(ALICE_PHONE), alice);
+        assertEq(registry.resolveHandle("alice"), alice);
+        assertEq(registry.reverse(alice), "alice");
+    }
+
+    function test_RecoveryMovesIdentityAfterDelay() public {
+        _register(alice, ALICE_PHONE, "alice");
+        bytes memory signature = _signRecovery(RECOVERY_KEY, ALICE_PHONE, newAlice, 0, deadline);
+
+        vm.expectEmit();
+        emit IdentityRegistry.RecoveryInitiated(ALICE_PHONE, alice, newAlice, block.timestamp + DELAY);
+        vm.prank(newAlice);
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+
+        (address pendingNew, uint256 readyAt, uint256 expiresAt) = registry.recoveryOf(ALICE_PHONE);
+        assertEq(pendingNew, newAlice);
+        assertEq(readyAt, block.timestamp + DELAY);
+        assertEq(expiresAt, readyAt + registry.RECOVERY_WINDOW());
+        _assertAliceUnmoved();
+
+        vm.warp(readyAt);
+        vm.expectEmit();
+        emit IdentityRegistry.RecoveryFinalized(ALICE_PHONE, alice, newAlice);
+        vm.expectEmit();
+        emit IdentityRegistry.AccountUpdated(alice, newAlice, "alice");
+        vm.prank(newAlice);
+        registry.finalizeRecovery(ALICE_PHONE);
+
+        assertEq(registry.resolvePhone(ALICE_PHONE), newAlice);
+        assertEq(registry.resolveHandle("alice"), newAlice);
+        assertEq(registry.reverse(newAlice), "alice");
+        assertEq(registry.phoneHashOf(newAlice), ALICE_PHONE);
+        assertEq(registry.reverse(alice), "");
+        assertEq(registry.phoneHashOf(alice), bytes32(0));
+        (pendingNew,,) = registry.recoveryOf(ALICE_PHONE);
+        assertEq(pendingNew, address(0));
+    }
+
+    function testFuzz_FinalizeOnlyInsideWindow(uint256 elapsed) public {
+        _register(alice, ALICE_PHONE, "alice");
+        uint256 start = block.timestamp;
+        uint256 readyAt = _initiate(newAlice);
+        uint256 window = registry.RECOVERY_WINDOW();
+        elapsed = bound(elapsed, 0, DELAY + window + 30 days);
+
+        vm.warp(start + elapsed);
+        if (elapsed < DELAY) {
+            vm.expectRevert(IdentityRegistry.RecoveryNotReady.selector);
+        } else if (elapsed > DELAY + window) {
+            vm.expectRevert(IdentityRegistry.RecoveryExpired.selector);
+        }
+        vm.prank(newAlice);
+        registry.finalizeRecovery(ALICE_PHONE);
+
+        bool moved = elapsed >= DELAY && elapsed <= DELAY + window;
+        assertEq(registry.resolveHandle("alice"), moved ? newAlice : alice);
+        assertEq(readyAt, start + DELAY);
+    }
+
+    function test_CurrentAccountCancelsRecovery() public {
+        _register(alice, ALICE_PHONE, "alice");
+        uint256 readyAt = _initiate(newAlice);
+
+        vm.expectEmit();
+        emit IdentityRegistry.RecoveryCancelled(ALICE_PHONE, newAlice, alice);
+        vm.prank(alice);
+        registry.cancelRecovery(ALICE_PHONE);
+
+        vm.warp(readyAt);
+        vm.expectRevert(IdentityRegistry.NoPendingRecovery.selector);
+        vm.prank(newAlice);
+        registry.finalizeRecovery(ALICE_PHONE);
+        _assertAliceUnmoved();
+    }
+
+    function test_OwnerCancelsRecovery() public {
+        _register(alice, ALICE_PHONE, "alice");
+        _initiate(newAlice);
+
+        vm.prank(owner);
+        registry.cancelRecovery(ALICE_PHONE);
+        (address pendingNew,,) = registry.recoveryOf(ALICE_PHONE);
+        assertEq(pendingNew, address(0));
+    }
+
+    function test_OthersCannotCancelRecovery() public {
+        _register(alice, ALICE_PHONE, "alice");
+        _initiate(newAlice);
+
+        address[3] memory callers = [bob, newAlice, recoveryAttester];
+        for (uint256 i = 0; i < callers.length; ++i) {
+            vm.expectRevert(IdentityRegistry.NotAuthorized.selector);
+            vm.prank(callers[i]);
+            registry.cancelRecovery(ALICE_PHONE);
+        }
+    }
+
+    function test_CancelWithoutRecoveryReverts() public {
+        _register(alice, ALICE_PHONE, "alice");
+        vm.expectRevert(IdentityRegistry.NoPendingRecovery.selector);
+        vm.prank(alice);
+        registry.cancelRecovery(ALICE_PHONE);
+    }
+
+    function test_CancelledAttestationCannotBeReplayed() public {
+        _register(alice, ALICE_PHONE, "alice");
+        bytes memory signature = _signRecovery(RECOVERY_KEY, ALICE_PHONE, newAlice, 0, deadline);
+        vm.prank(newAlice);
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+        vm.prank(alice);
+        registry.cancelRecovery(ALICE_PHONE);
+
+        vm.expectRevert(IdentityRegistry.InvalidAttestation.selector);
+        vm.prank(newAlice);
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+
+        // A fresh attestation for the next nonce works.
+        assertEq(registry.recoveryNonce(ALICE_PHONE), 1);
+        _initiate(newAlice);
+    }
+
+    function test_RecoveryNeedsTheRecoveryKey() public {
+        _register(alice, ALICE_PHONE, "alice");
+
+        // Neither a stranger's key nor the registration attester's key is accepted.
+        uint256[2] memory keys = [FORGER_KEY, ATTESTER_KEY];
+        for (uint256 i = 0; i < keys.length; ++i) {
+            bytes memory signature = _signRecovery(keys[i], ALICE_PHONE, newAlice, 0, deadline);
+            vm.expectRevert(IdentityRegistry.InvalidAttestation.selector);
+            vm.prank(newAlice);
+            registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+        }
+        assertEq(registry.recoveryNonce(ALICE_PHONE), 0);
+    }
+
+    function test_RegistrationKeyCompromiseCannotRecover() public {
+        // A registration attestation shaped like a recovery is a different typed struct.
+        _register(alice, ALICE_PHONE, "alice");
+        bytes memory signature = _sign(ATTESTER_KEY, newAlice, ALICE_PHONE, "alice", deadline);
+        vm.expectRevert(IdentityRegistry.InvalidAttestation.selector);
+        vm.prank(newAlice);
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+    }
+
+    function test_RecoveryAttestationIsBoundToItsFields() public {
+        _register(alice, ALICE_PHONE, "alice");
+        _register(bob, BOB_PHONE, "bob");
+        bytes memory signature = _signRecovery(RECOVERY_KEY, ALICE_PHONE, newAlice, 0, deadline);
+
+        // Another caller.
+        vm.expectRevert(IdentityRegistry.InvalidAttestation.selector);
+        vm.prank(makeAddr("mallory"));
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+
+        // Another identity.
+        vm.expectRevert(IdentityRegistry.InvalidAttestation.selector);
+        vm.prank(newAlice);
+        registry.initiateRecovery(BOB_PHONE, deadline, signature);
+
+        // Another deadline.
+        vm.expectRevert(IdentityRegistry.InvalidAttestation.selector);
+        vm.prank(newAlice);
+        registry.initiateRecovery(ALICE_PHONE, deadline + 1, signature);
+    }
+
+    function test_ExpiredRecoveryAttestationReverts() public {
+        _register(alice, ALICE_PHONE, "alice");
+        bytes memory signature = _signRecovery(RECOVERY_KEY, ALICE_PHONE, newAlice, 0, deadline);
+        vm.warp(deadline + 1);
+        vm.expectRevert(IdentityRegistry.AttestationExpired.selector);
+        vm.prank(newAlice);
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+    }
+
+    function test_CannotRecoverUnknownIdentity() public {
+        bytes memory signature = _signRecovery(RECOVERY_KEY, ALICE_PHONE, newAlice, 0, deadline);
+        vm.expectRevert(IdentityRegistry.NotRegistered.selector);
+        vm.prank(newAlice);
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+    }
+
+    function test_RegisteredAccountCannotRecoverAnother() public {
+        _register(alice, ALICE_PHONE, "alice");
+        _register(bob, BOB_PHONE, "bob");
+        bytes memory signature = _signRecovery(RECOVERY_KEY, ALICE_PHONE, bob, 0, deadline);
+        vm.expectRevert(IdentityRegistry.AlreadyRegistered.selector);
+        vm.prank(bob);
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+    }
+
+    function test_SecondRecoveryBlockedWhileOnePending() public {
+        _register(alice, ALICE_PHONE, "alice");
+        _initiate(newAlice);
+
+        address mallory = makeAddr("mallory");
+        bytes memory signature = _signRecovery(RECOVERY_KEY, ALICE_PHONE, mallory, 1, deadline);
+        vm.expectRevert(IdentityRegistry.RecoveryAlreadyPending.selector);
+        vm.prank(mallory);
+        registry.initiateRecovery(ALICE_PHONE, deadline, signature);
+    }
+
+    function test_ExpiredRecoveryCanBeReplaced() public {
+        _register(alice, ALICE_PHONE, "alice");
+        uint256 readyAt = _initiate(newAlice);
+        vm.warp(readyAt + registry.RECOVERY_WINDOW() + 1);
+
+        address newerAlice = makeAddr("newer alice");
+        deadline = block.timestamp + 10 minutes;
+        _initiate(newerAlice);
+        (address pendingNew,,) = registry.recoveryOf(ALICE_PHONE);
+        assertEq(pendingNew, newerAlice);
+    }
+
+    function test_OnlyNamedAccountFinalizes() public {
+        _register(alice, ALICE_PHONE, "alice");
+        uint256 readyAt = _initiate(newAlice);
+        vm.warp(readyAt);
+
+        vm.expectRevert(IdentityRegistry.NotRecoveryAccount.selector);
+        vm.prank(bob);
+        registry.finalizeRecovery(ALICE_PHONE);
+    }
+
+    function test_CannotFinalizeAfterRegisteringSeparately() public {
+        _register(alice, ALICE_PHONE, "alice");
+        uint256 readyAt = _initiate(newAlice);
+        _register(newAlice, BOB_PHONE, "other");
+
+        vm.warp(readyAt);
+        vm.expectRevert(IdentityRegistry.AlreadyRegistered.selector);
+        vm.prank(newAlice);
+        registry.finalizeRecovery(ALICE_PHONE);
+    }
+
+    function test_MigrationDropsPendingRecovery() public {
+        // Alice still has her account, so she migrates; the attacker's recovery dies with it.
+        _register(alice, ALICE_PHONE, "alice");
+        address mallory = makeAddr("mallory");
+        uint256 readyAt = _initiate(mallory);
+
+        vm.prank(alice);
+        registry.updateAccount(newAlice);
+        vm.prank(newAlice);
+        registry.acceptAccount(alice);
+
+        vm.warp(readyAt);
+        vm.expectRevert(IdentityRegistry.NoPendingRecovery.selector);
+        vm.prank(mallory);
+        registry.finalizeRecovery(ALICE_PHONE);
+        assertEq(registry.resolveHandle("alice"), newAlice);
+    }
+
+    function test_RecoveryClearsPendingMigration() public {
+        _register(alice, ALICE_PHONE, "alice");
+        vm.prank(alice);
+        registry.updateAccount(bob);
+
+        uint256 readyAt = _initiate(newAlice);
+        vm.warp(readyAt);
+        vm.prank(newAlice);
+        registry.finalizeRecovery(ALICE_PHONE);
+
+        assertEq(registry.pendingAccount(alice), address(0));
+        vm.expectRevert(IdentityRegistry.NotPendingAccount.selector);
+        vm.prank(bob);
+        registry.acceptAccount(alice);
+    }
+
+    function test_RecoveredAccountCanCancelLaterRecovery() public {
+        _register(alice, ALICE_PHONE, "alice");
+        uint256 readyAt = _initiate(newAlice);
+        vm.warp(readyAt);
+        vm.prank(newAlice);
+        registry.finalizeRecovery(ALICE_PHONE);
+
+        // The old account no longer has any say; the new holder does.
+        deadline = block.timestamp + 10 minutes;
+        _initiate(makeAddr("mallory"));
+        vm.expectRevert(IdentityRegistry.NotAuthorized.selector);
+        vm.prank(alice);
+        registry.cancelRecovery(ALICE_PHONE);
+        vm.prank(newAlice);
+        registry.cancelRecovery(ALICE_PHONE);
+    }
+
+    function test_PauseBlocksInitiateAndFinalizeButNotCancel() public {
+        _register(alice, ALICE_PHONE, "alice");
+        _register(bob, BOB_PHONE, "bob");
+        uint256 readyAt = _initiate(newAlice);
+
+        vm.expectRevert(IdentityRegistry.NotOwner.selector);
+        vm.prank(alice);
+        registry.setRecoveryPaused(true);
+
+        vm.prank(owner);
+        registry.setRecoveryPaused(true);
+
+        vm.warp(readyAt);
+        vm.expectRevert(IdentityRegistry.RecoveryIsPaused.selector);
+        vm.prank(newAlice);
+        registry.finalizeRecovery(ALICE_PHONE);
+
+        address newBob = makeAddr("new bob");
+        deadline = block.timestamp + 10 minutes;
+        bytes memory signature = _signRecovery(RECOVERY_KEY, BOB_PHONE, newBob, 0, deadline);
+        vm.expectRevert(IdentityRegistry.RecoveryIsPaused.selector);
+        vm.prank(newBob);
+        registry.initiateRecovery(BOB_PHONE, deadline, signature);
+
+        vm.prank(alice);
+        registry.cancelRecovery(ALICE_PHONE);
+
+        // Registration and migration are unaffected by the pause.
+        _register(makeAddr("carol"), keccak256("carol phone"), "carol");
+        vm.prank(bob);
+        registry.updateAccount(newBob);
+        vm.prank(newBob);
+        registry.acceptAccount(bob);
+        assertEq(registry.resolveHandle("bob"), newBob);
+    }
+
+    function test_DelayChangeDoesNotAffectPendingRecovery() public {
+        _register(alice, ALICE_PHONE, "alice");
+        uint256 readyAt = _initiate(newAlice);
+
+        vm.prank(owner);
+        registry.setRecoveryDelay(1 days);
+        (, uint256 readyAfter,) = registry.recoveryOf(ALICE_PHONE);
+        assertEq(readyAfter, readyAt);
+
+        vm.warp(block.timestamp + 1 days);
+        vm.expectRevert(IdentityRegistry.RecoveryNotReady.selector);
+        vm.prank(newAlice);
+        registry.finalizeRecovery(ALICE_PHONE);
+    }
+
+    function test_RecoveryDelayGuards() public {
+        vm.expectRevert(IdentityRegistry.NotOwner.selector);
+        vm.prank(alice);
+        registry.setRecoveryDelay(2 days);
+
+        vm.startPrank(owner);
+        vm.expectRevert(IdentityRegistry.InvalidRecoveryDelay.selector);
+        registry.setRecoveryDelay(1 days - 1);
+        vm.expectRevert(IdentityRegistry.InvalidRecoveryDelay.selector);
+        registry.setRecoveryDelay(30 days + 1);
+        registry.setRecoveryDelay(30 days);
+        vm.stopPrank();
+        assertEq(registry.recoveryDelay(), 30 days);
+    }
+
+    function test_OwnerRotatesRecoveryAttester() public {
+        _register(alice, ALICE_PHONE, "alice");
+        vm.prank(owner);
+        registry.setRecoveryAttester(vm.addr(FORGER_KEY));
+
+        bytes memory stale = _signRecovery(RECOVERY_KEY, ALICE_PHONE, newAlice, 0, deadline);
+        vm.expectRevert(IdentityRegistry.InvalidAttestation.selector);
+        vm.prank(newAlice);
+        registry.initiateRecovery(ALICE_PHONE, deadline, stale);
+
+        bytes memory fresh = _signRecovery(FORGER_KEY, ALICE_PHONE, newAlice, 0, deadline);
+        vm.prank(newAlice);
+        registry.initiateRecovery(ALICE_PHONE, deadline, fresh);
+    }
+
+    function test_AttesterKeysStaySeparate() public {
+        vm.expectRevert(IdentityRegistry.NotOwner.selector);
+        vm.prank(alice);
+        registry.setRecoveryAttester(alice);
+
+        vm.startPrank(owner);
+        vm.expectRevert(IdentityRegistry.ZeroAddress.selector);
+        registry.setRecoveryAttester(address(0));
+        vm.expectRevert(IdentityRegistry.AttestersMustDiffer.selector);
+        registry.setRecoveryAttester(attester);
+        vm.expectRevert(IdentityRegistry.AttestersMustDiffer.selector);
+        registry.setAttester(recoveryAttester);
+        vm.stopPrank();
+    }
+
+    // ------------------------------------------------------------------
     // Administration
     // ------------------------------------------------------------------
 
-    function test_ConstructorRejectsZeroAddresses() public {
+    function test_ConstructorGuards() public {
         vm.expectRevert(IdentityRegistry.ZeroAddress.selector);
-        new IdentityRegistry(address(0), attester);
+        new IdentityRegistry(address(0), attester, recoveryAttester, DELAY);
         vm.expectRevert(IdentityRegistry.ZeroAddress.selector);
-        new IdentityRegistry(owner, address(0));
+        new IdentityRegistry(owner, address(0), recoveryAttester, DELAY);
+        vm.expectRevert(IdentityRegistry.ZeroAddress.selector);
+        new IdentityRegistry(owner, attester, address(0), DELAY);
+        vm.expectRevert(IdentityRegistry.AttestersMustDiffer.selector);
+        new IdentityRegistry(owner, attester, attester, DELAY);
+        vm.expectRevert(IdentityRegistry.InvalidRecoveryDelay.selector);
+        new IdentityRegistry(owner, attester, recoveryAttester, 1 days - 1);
+        vm.expectRevert(IdentityRegistry.InvalidRecoveryDelay.selector);
+        new IdentityRegistry(owner, attester, recoveryAttester, 30 days + 1);
     }
 
     function test_OwnerRotatesAttester() public {
@@ -457,5 +870,17 @@ contract IdentityRegistryTest is Test {
         assertEq(digest, VIEM_DIGEST);
     }
 
+    function test_RecoveryDigestMatchesViem() public {
+        vm.chainId(5042002);
+        IdentityRegistry pinned = IdentityRegistry(0x1111111111111111111111111111111111111111);
+        vm.etch(address(pinned), address(registry).code);
+
+        bytes32 digest = pinned.recoveryDigest(
+            bytes32(uint256(0x1234)), 0x3333333333333333333333333333333333333333, 7, 1_800_000_000
+        );
+        assertEq(digest, VIEM_RECOVERY_DIGEST);
+    }
+
+    bytes32 internal constant VIEM_RECOVERY_DIGEST = 0x81f43f41239e9fdcf5e261cde81ebb112a3df29a7c67e545d292af9296a00aa3;
     bytes32 internal constant VIEM_DIGEST = 0x490f06b4f3b88a9a550ae94176497dda7b449c7cede70d630a529edb67f45e7e;
 }
