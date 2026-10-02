@@ -15,7 +15,8 @@ type UserRow = {
 type ChallengeRow = {
   id: string;
   phone_lookup: string;
-  code_hash: string;
+  code_hash: string | null;
+  provider_ref: string | null;
   expires_at: string;
   attempts: number;
   consumed_at: string | null;
@@ -55,6 +56,7 @@ export class SupabaseStore implements Store {
       id: challenge.id,
       phone_lookup: challenge.phoneLookup,
       code_hash: challenge.codeHash,
+      provider_ref: challenge.providerRef,
       expires_at: new Date(challenge.expiresAt).toISOString(),
     });
     unwrap(result, "create challenge");
@@ -68,6 +70,7 @@ export class SupabaseStore implements Store {
       id: row.id,
       phoneLookup: row.phone_lookup as Hex,
       codeHash: row.code_hash,
+      providerRef: row.provider_ref,
       expiresAt: Date.parse(row.expires_at),
       attempts: row.attempts,
       consumed: row.consumed_at !== null,

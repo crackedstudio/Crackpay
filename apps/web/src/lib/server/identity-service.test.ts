@@ -131,6 +131,55 @@ describe("OTP", () => {
   });
 });
 
+describe("OTP through a hosted verifier", () => {
+  it("lets the service hold the code, and never stores one itself", async () => {
+    const checks: [string, string][] = [];
+    deps.verifier = {
+      start: async (phone) => `ref-for-${phone}`,
+      check: async (reference, code) => {
+        checks.push([reference, code]);
+        return code === "424242";
+      },
+    };
+
+    const { challengeId } = await startOtp(deps, PHONE, "1.1.1.1");
+    expect(sent).toHaveLength(0);
+    expect(await deps.store.getChallenge(challengeId)).toMatchObject({ codeHash: null, providerRef: `ref-for-${PHONE}` });
+
+    expect(await code(verifyOtp(deps, challengeId, "000000"))).toBe("invalid_code");
+    expect((await verifyOtp(deps, challengeId, "424242")).phoneLookup).toMatch(/^0x/);
+    expect(checks).toEqual([
+      [`ref-for-${PHONE}`, "000000"],
+      [`ref-for-${PHONE}`, "424242"],
+    ]);
+    // Consumed: the service is not asked again.
+    expect(await code(verifyOtp(deps, challengeId, "424242"))).toBe("code_expired");
+    expect(checks).toHaveLength(2);
+  });
+
+  it("still caps attempts and rejects malformed codes without calling the service", async () => {
+    let calls = 0;
+    deps.verifier = { start: async () => "ref", check: async () => (calls++, false) };
+    const { challengeId } = await startOtp(deps, PHONE, "1.1.1.1");
+
+    expect(await code(verifyOtp(deps, challengeId, "abc"))).toBe("invalid_code");
+    expect(calls).toBe(0);
+    for (let i = 0; i < 4; i++) expect(await code(verifyOtp(deps, challengeId, "111111"))).toBe("invalid_code");
+    expect(await code(verifyOtp(deps, challengeId, "111111"))).toBe("code_expired");
+    expect(calls).toBe(4);
+  });
+
+  it("creates no challenge when the service refuses to send", async () => {
+    deps.verifier = {
+      start: async () => {
+        throw new ApiError(400, "sms_failed", "nope");
+      },
+      check: async () => false,
+    };
+    expect(await code(startOtp(deps, PHONE, "1.1.1.1"))).toBe("sms_failed");
+  });
+});
+
 describe("attestRegistration", () => {
   it("signs an attestation the registry will accept", async () => {
     const lookup = await verifiedLookup();

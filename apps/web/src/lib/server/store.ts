@@ -13,7 +13,10 @@ export type User = {
 export type Challenge = {
   id: string;
   phoneLookup: Hex;
-  codeHash: string;
+  /** Set when CrackPay generated the code itself. */
+  codeHash: string | null;
+  /** Set when a hosted verification service holds the code instead. */
+  providerRef: string | null;
   expiresAt: number;
   attempts: number;
   consumed: boolean;

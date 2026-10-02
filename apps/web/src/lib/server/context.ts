@@ -5,9 +5,10 @@ import { identityRegistryAbi } from "../../config/identity";
 import { arcChain, publicClient } from "../arc";
 import { ServerConfigError, requireEnv } from "./errors";
 import type { IdentityDeps } from "./identity-service";
-import { consoleSms } from "./sms";
+import { consoleSms, type CodeVerifier } from "./sms";
 import { MemoryStore, type Store } from "./store";
 import { SupabaseStore } from "./supabase-store";
+import { twilioVerify } from "./twilio-verify";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -23,10 +24,17 @@ function createStore(): Store {
   return new MemoryStore();
 }
 
-function createSms() {
-  // No SMS provider is integrated yet. Codes go to the server log in development only.
-  if (isProduction) throw new ServerConfigError("No SMS provider is configured");
-  return consoleSms;
+/** Twilio Verify when its three variables are set; otherwise nothing. */
+function createVerifier(): CodeVerifier | undefined {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+  if (accountSid && authToken && serviceSid) return twilioVerify({ accountSid, authToken, serviceSid });
+  if (isProduction) {
+    throw new ServerConfigError("TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_VERIFY_SERVICE_SID are not set");
+  }
+  console.warn("[crackpay] Twilio Verify is not configured: codes are printed to this log instead of being sent.");
+  return undefined;
 }
 
 export const sessionSecret = () => requireEnv("SESSION_SECRET");
@@ -40,7 +48,8 @@ export function identityDeps(): IdentityDeps {
 
   globals.crackpayDeps = {
     store: createStore(),
-    sms: createSms(),
+    sms: consoleSms,
+    verifier: createVerifier(),
     registry: {
       resolveHandle: (handle) => publicClient.readContract({ ...read, functionName: "resolveHandle", args: [handle] }),
       resolvePhone: (hash) => publicClient.readContract({ ...read, functionName: "resolvePhone", args: [hash] }),

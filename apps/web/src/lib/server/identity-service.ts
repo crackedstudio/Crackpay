@@ -4,7 +4,7 @@ import { IDENTITY_DOMAIN_NAME, IDENTITY_DOMAIN_VERSION, registrationTypes } from
 import { isValidHandle } from "../handle";
 import { ApiError } from "./errors";
 import { newSalt, normalizePhone, phoneHash, phoneLookup } from "./phone";
-import type { SmsSender } from "./sms";
+import type { CodeVerifier, SmsSender } from "./sms";
 import type { Store, User } from "./store";
 
 export const OTP_TTL_SECONDS = 10 * 60;
@@ -19,7 +19,10 @@ export interface RegistryReader {
 
 export type IdentityDeps = {
   store: Store;
+  /** Sends codes CrackPay generates itself. Used only when there is no `verifier`. */
   sms: SmsSender;
+  /** When set, this service generates, delivers and checks codes instead. */
+  verifier?: CodeVerifier;
   registry: RegistryReader;
   /** Signs registration attestations. Its address is the registry's `attester`. */
   attester: Account;
@@ -55,12 +58,21 @@ export async function startOtp(deps: IdentityDeps, phoneInput: string, ip: strin
   if (!(await deps.store.hit(`otp:ip:${ip}`, 60 * 60, 20))) throw tooMany();
 
   const challengeId = crypto.randomUUID();
+  const expiresAt = deps.now() + OTP_TTL_SECONDS * 1000;
+
+  if (deps.verifier) {
+    const providerRef = await deps.verifier.start(phone);
+    await deps.store.createChallenge({ id: challengeId, phoneLookup: lookup, codeHash: null, providerRef, expiresAt });
+    return { challengeId };
+  }
+
   const code = deps.generateCode?.() ?? randomInt(0, 1_000_000).toString().padStart(6, "0");
   await deps.store.createChallenge({
     id: challengeId,
     phoneLookup: lookup,
     codeHash: codeHash(deps.secret, challengeId, code),
-    expiresAt: deps.now() + OTP_TTL_SECONDS * 1000,
+    providerRef: null,
+    expiresAt,
   });
   await deps.sms.send(phone, `Your CrackPay code is ${code}. It expires in 10 minutes. Never share it.`);
   return { challengeId };
@@ -81,7 +93,12 @@ export async function verifyOtp(deps: IdentityDeps, challengeId: string, code: s
   if (attempts > OTP_MAX_ATTEMPTS) {
     throw new ApiError(400, "code_expired", "Too many wrong codes. Request a new one.");
   }
-  if (!/^\d{6}$/.test(code) || !sameHash(challenge.codeHash, codeHash(deps.secret, challengeId, code))) {
+  if (!/^\d{6}$/.test(code)) throw invalid;
+
+  if (challenge.providerRef) {
+    if (!deps.verifier) throw new Error("Challenge belongs to a verification service that is not configured");
+    if (!(await deps.verifier.check(challenge.providerRef, code))) throw invalid;
+  } else if (!challenge.codeHash || !sameHash(challenge.codeHash, codeHash(deps.secret, challengeId, code))) {
     throw invalid;
   }
 
