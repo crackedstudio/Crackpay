@@ -1,7 +1,7 @@
 "use client";
 
-import { Avatar } from "@/components/Avatar";
 import { CopyRow } from "@/components/CopyRow";
+import { QrCode } from "@/components/QrCode";
 import { RequireAccount } from "@/components/RequireAccount";
 import { useToast } from "@/components/Toast";
 import { Link as LinkIcon, Share, Wallet } from "@/components/icons";
@@ -39,11 +39,13 @@ function ReceiveScreen({ address, handle }: { address: Address; handle: string }
         ) : undefined
       }
     >
-      <div className="flex flex-col items-center gap-3 py-6">
-        <Avatar seed={handle} size="lg" />
+      {/* The code stands in for the avatar here: holding up a phone is the
+          quickest way to be paid in person, so it earns the top of the screen. */}
+      <div className="flex flex-col items-center gap-4 py-4">
+        <QrCode value={link} label={`QR code to pay @${handle} on CrackPay`} />
         <div className="flex flex-col items-center gap-1">
           <span className="text-3xl font-semibold tracking-tight">@{handle}</span>
-          <span className="text-sm text-muted">Anyone on CrackPay can pay you here</span>
+          <span className="text-sm text-muted">Scan with any phone camera to pay me</span>
         </div>
       </div>
 
