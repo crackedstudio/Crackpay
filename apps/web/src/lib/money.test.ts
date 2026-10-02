@@ -6,6 +6,7 @@ import {
   formatAmountExact,
   nativeDust,
   nativeToBase,
+  nativeToBaseCeil,
   parseAmount,
   type MoneyErrorCode,
 } from "./money";
@@ -52,6 +53,14 @@ describe("6 ↔ 18 decimal conversion", () => {
     const native = 1_500_000_999_999_999_999n;
     expect(nativeDust(native)).toBe(999_999_999_999n);
     expect(baseToNative(nativeToBase(native)) + nativeDust(native)).toBe(native);
+  });
+
+  it("rounds up when asked, so a cost is never understated", () => {
+    expect(nativeToBaseCeil(0n)).toBe(0n);
+    expect(nativeToBaseCeil(1n)).toBe(1n);
+    expect(nativeToBaseCeil(1_000_000_000_000n)).toBe(1n);
+    expect(nativeToBaseCeil(1_000_000_000_001n)).toBe(2n);
+    expect(errorCode(() => nativeToBaseCeil(-1n))).toBe("NEGATIVE");
   });
 
   it("stays exact beyond Number.MAX_SAFE_INTEGER", () => {

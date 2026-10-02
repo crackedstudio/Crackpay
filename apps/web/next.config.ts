@@ -1,10 +1,21 @@
 import type { NextConfig } from "next";
+import { miniAppOrigins } from "./src/config/miniapps";
 
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   async headers() {
     return [
+      {
+        // Only registered Mini Apps can be framed.
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: `frame-src 'self' ${miniAppOrigins().join(" ")}`,
+          },
+        ],
+      },
       {
         source: "/sw.js",
         headers: [

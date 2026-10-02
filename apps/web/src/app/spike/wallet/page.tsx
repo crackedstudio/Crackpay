@@ -6,6 +6,7 @@ import type { P256Credential } from "viem/account-abstraction";
 import { parseRecipient } from "@/lib/address";
 import { arcChain } from "@/lib/arc";
 import { formatAmountExact, parseAmount } from "@/lib/money";
+import { loadCredential, saveCredential } from "@/lib/session";
 import { sendUsdc } from "@/lib/userop";
 import {
   loginWithPasskey,
@@ -14,9 +15,6 @@ import {
   type CrackPaySmartAccount,
 } from "@/lib/wallet";
 
-// Spike only: the credential is a public key and id, but production should
-// keep it in an httpOnly cookie rather than localStorage.
-const CREDENTIAL_KEY = "crackpay.spike.credential";
 const AMOUNT = parseAmount("0.1");
 const explorer = arcChain.blockExplorers.default.url;
 
@@ -48,7 +46,7 @@ export default function WalletSpike() {
   }
 
   async function connect(credential: P256Credential) {
-    localStorage.setItem(CREDENTIAL_KEY, JSON.stringify(credential));
+    saveCredential(credential);
     setAccount(await toSmartAccount(credential));
   }
 
@@ -57,9 +55,9 @@ export default function WalletSpike() {
 
   const restore = () =>
     run(async () => {
-      const stored = localStorage.getItem(CREDENTIAL_KEY);
+      const stored = loadCredential();
       if (!stored) throw new Error("No stored credential in this browser");
-      setAccount(await toSmartAccount(JSON.parse(stored) as P256Credential));
+      setAccount(await toSmartAccount(stored));
     });
 
   const send = () =>

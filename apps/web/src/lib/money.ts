@@ -42,6 +42,15 @@ export function nativeToBase(native: bigint): bigint {
   return native / NATIVE_PER_BASE;
 }
 
+/**
+ * Native 18-decimal amount → 6-decimal base units, rounded up. For amounts the
+ * user is about to pay, so a confirmation never understates the cost.
+ */
+export function nativeToBaseCeil(native: bigint): bigint {
+  assertNonNegative(native);
+  return (native + NATIVE_PER_BASE - 1n) / NATIVE_PER_BASE;
+}
+
 /** The sub-base-unit remainder that `nativeToBase` drops, in native units. */
 export function nativeDust(native: bigint): bigint {
   assertNonNegative(native);
