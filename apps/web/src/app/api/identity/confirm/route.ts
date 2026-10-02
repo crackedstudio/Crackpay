@@ -1,12 +1,18 @@
-import type { Hex } from "viem";
+import { isAddress } from "viem";
 import { identityDeps } from "@/lib/server/context";
-import { requirePhone, respond, setSessionCookie } from "@/lib/server/http";
+import { ApiError } from "@/lib/server/errors";
+import { readBody, respond, setSessionCookie, stringField } from "@/lib/server/http";
 import { confirmRegistration } from "@/lib/server/identity-service";
+import { registrantLookup } from "@/lib/server/registrant";
 
-export function POST(): Promise<Response> {
+export function POST(request: Request): Promise<Response> {
   return respond(async () => {
-    const { phoneLookup } = await requirePhone();
-    const user = await confirmRegistration(identityDeps(), phoneLookup as Hex);
+    const body = await readBody(request);
+    const account = stringField(body, "account");
+    if (!isAddress(account)) throw new ApiError(400, "invalid_account", "Invalid account");
+
+    const deps = identityDeps();
+    const user = await confirmRegistration(deps, await registrantLookup(deps, request, account));
     await setSessionCookie(user.id);
     return { account: user.smartAccount, handle: user.handle };
   });

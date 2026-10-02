@@ -5,6 +5,7 @@ import { Suspense, useState, type FormEvent } from "react";
 import { isAddressEqual } from "viem";
 import { RequireAccount } from "@/components/RequireAccount";
 import { Button, ErrorText, LinkButton, Screen, TextField } from "@/components/ui";
+import { ONBOARDING_MODE } from "@/config/onboarding";
 import { arcChain } from "@/lib/arc";
 import { useUsdcBalance } from "@/lib/balance";
 import { dollars, errorText } from "@/lib/format";
@@ -80,14 +81,14 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
         <form className="flex flex-1 flex-col gap-5" onSubmit={findRecipient}>
           <TextField
             label="Who are you paying?"
-            placeholder="@handle, phone number or address"
+            placeholder={ONBOARDING_MODE === "phone" ? "@handle, phone number or address" : "@handle or address"}
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
             autoFocus
             value={to}
             onChange={(event) => setTo(event.target.value)}
-            hint="Phone numbers need the country code, like +234…"
+            hint={ONBOARDING_MODE === "phone" ? "Phone numbers need the country code, like +234…" : undefined}
           />
           <ErrorText>{error}</ErrorText>
           <div className="mt-auto">

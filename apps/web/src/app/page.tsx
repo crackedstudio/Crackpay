@@ -7,6 +7,7 @@ import { ActivityList } from "@/components/ActivityList";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { LinkButton, Screen } from "@/components/ui";
 import { useWallet } from "@/components/WalletProvider";
+import { ONBOARDING_MODE } from "@/config/onboarding";
 import { useUsdcBalance } from "@/lib/balance";
 import { dollars } from "@/lib/format";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
@@ -20,7 +21,7 @@ function Welcome() {
         <p className="text-muted">A dollar account on your phone. No fees to send, no seed phrase to lose.</p>
       </div>
       <LinkButton href="/onboarding">Get started</LinkButton>
-      <LinkButton href="/onboarding" variant="ghost">
+      <LinkButton href={ONBOARDING_MODE === "phone" ? "/onboarding" : "/signin"} variant="ghost">
         I already have an account
       </LinkButton>
     </Screen>

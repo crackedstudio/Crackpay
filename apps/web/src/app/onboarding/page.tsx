@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { isAddressEqual, type Address, type Hex } from "viem";
 import { Button, ErrorText, Screen, TextField } from "@/components/ui";
 import { useWallet } from "@/components/WalletProvider";
+import { ONBOARDING_MODE } from "@/config/onboarding";
 import { api } from "@/lib/api";
 import { errorText } from "@/lib/format";
 import { isValidHandle, normalizeHandle } from "@/lib/handle";
@@ -25,7 +26,7 @@ type Attestation = { phoneHash: Hex; handle: string; deadline: number; signature
 export default function Onboarding() {
   const wallet = useWallet();
   const router = useRouter();
-  const [step, setStep] = useState<Step>({ name: "phone" });
+  const [step, setStep] = useState<Step>(ONBOARDING_MODE === "phone" ? { name: "phone" } : { name: "handle" });
   const [phone, setPhone] = useState("+234");
   const [code, setCode] = useState("");
   const [handle, setHandle] = useState("");
@@ -102,7 +103,9 @@ export default function Onboarding() {
     try {
       // Reuse a passkey made on an earlier, unfinished attempt rather than creating a second one.
       setStep({ name: "creating", message: "Creating your passkey…" });
-      const account = wallet.status === "ready" ? wallet.account : await wallet.signIn(await registerPasskey(cleanHandle));
+      // Circle needs a unique passkey name; the suffix keeps a retry of the same handle from clashing.
+      const passkeyName = `${cleanHandle}.${crypto.randomUUID().slice(0, 4)}`;
+      const account = wallet.status === "ready" ? wallet.account : await wallet.signIn(await registerPasskey(passkeyName));
 
       setStep({ name: "creating", message: "Setting up your account…" });
       const attestation = await api.post<Attestation>("/api/identity/attest", { account: account.address, handle: cleanHandle });
@@ -115,7 +118,7 @@ export default function Onboarding() {
         );
       }
 
-      await api.post("/api/identity/confirm");
+      await api.post("/api/identity/confirm", { account: account.address });
       await wallet.refreshHandle();
       router.replace("/");
     } catch (caught) {

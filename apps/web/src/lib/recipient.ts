@@ -1,5 +1,6 @@
 import { isAddressEqual, zeroAddress, type Address } from "viem";
 import { contracts } from "../config/contracts";
+import { ONBOARDING_MODE } from "../config/onboarding";
 import { identityRegistryAbi } from "../config/identity";
 import { InvalidRecipientError, parseRecipient } from "./address";
 import { api, ApiClientError } from "./api";
@@ -31,6 +32,9 @@ export async function resolveRecipient(input: string): Promise<Recipient> {
   }
 
   if (kind === "phone") {
+    if (ONBOARDING_MODE !== "phone") {
+      throw new InvalidRecipientError("Paying by phone number isn't available yet. Use a handle or an address.");
+    }
     try {
       const found = await api.post<{ account: Address; handle: string }>("/api/resolve", { phone: input });
       return { address: parseRecipient(found.account), label: `@${found.handle}` };

@@ -22,6 +22,14 @@ export function phoneLookup(pepper: string, phone: string): Hex {
   return `0x${createHmac("sha256", pepper).update(phone).digest("hex")}`;
 }
 
+/**
+ * The lookup key for an identity that has no phone number (passkey-only
+ * onboarding). Namespaced so it can never collide with a phone's key.
+ */
+export function accountLookup(pepper: string, account: string): Hex {
+  return `0x${createHmac("sha256", pepper).update(`account:${account.toLowerCase()}`).digest("hex")}`;
+}
+
 export function newSalt(): Hex {
   return `0x${randomBytes(32).toString("hex")}`;
 }
