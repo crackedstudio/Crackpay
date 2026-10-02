@@ -1,39 +1,109 @@
 @import "tailwindcss";
 
+/*
+ * One palette, two schemes. Everything below is a token: components never
+ * hardcode a colour. Warm neutrals plus an emerald that only ever means money
+ * or "go" — so a green thing on screen is always safe to tap.
+ */
 :root {
-  --background: #fafaf9;
-  --foreground: #0c0a09;
-  --muted: #78716c;
+  --background: #f7f7f5;
   --card: #ffffff;
-  --line: #e7e5e4;
-  --accent: #15803d;
-  --accent-foreground: #ffffff;
-  --danger: #b91c1c;
-}
+  --surface: #f1f0ed;
+  --foreground: #14110f;
+  --muted: #6b6560;
+  --line: #e6e3df;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-card: var(--card);
-  --color-line: var(--line);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --accent: #047857;
+  --accent-soft: #d6f5e6;
+  --accent-foreground: #ffffff;
+
+  --danger: #be123c;
+  --danger-soft: #ffe4e6;
+  --warning: #b45309;
+  --warning-soft: #fdf1d6;
+
+  --ring: #14110f;
+  --shadow-card: 0 1px 2px rgb(20 17 15 / 0.04), 0 8px 24px -12px rgb(20 17 15 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(20 17 15 / 0.05), 0 18px 40px -16px rgb(20 17 15 / 0.22);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0c0a09;
-    --foreground: #fafaf9;
-    --muted: #a8a29e;
-    --card: #1c1917;
-    --line: #292524;
-    --accent: #22c55e;
-    --accent-foreground: #052e16;
-    --danger: #f87171;
+    --background: #0b0a09;
+    --card: #191714;
+    --surface: #231f1b;
+    --foreground: #f7f7f5;
+    --muted: #a39b93;
+    --line: #2d2822;
+
+    --accent: #34d399;
+    --accent-soft: #0a2e22;
+    --accent-foreground: #04281e;
+
+    --danger: #fb7185;
+    --danger-soft: #2d1117;
+    --warning: #fbbf24;
+    --warning-soft: #2b2008;
+
+    --ring: #f7f7f5;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.5), 0 18px 40px -16px rgb(0 0 0 / 0.7);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-lift: var(--shadow-lift);
+
+  --animate-rise: rise 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-fade: fade 0.18s ease-out;
+  --animate-pop: pop 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes rise {
+  from { transform: translateY(14px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shimmer {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -41,4 +111,35 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  /* An installed PWA should not rubber-band like a web page. */
+  overscroll-behavior-y: none;
+}
+
+/* Money and codes: fixed-width digits so figures do not jitter as they change. */
+.numeric {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Keypad and action tiles need a tap that feels physical, not a hover state. */
+.pressable {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease, opacity 0.1s ease, background-color 0.15s ease;
+}
+.pressable:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/*
+ * A field shows focus through its own wrapper, which carries the rounding. An
+ * outline on the bare input draws a sharp rectangle poking out of the corners.
+ */
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
 }

@@ -1,10 +1,16 @@
+import { Wallet } from "@/components/icons";
+import { EmptyState, Screen } from "@/components/ui";
+
 export default function Offline() {
   return (
-    <main className="mx-auto flex w-full max-w-[420px] flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="text-lg font-semibold">You&apos;re offline</h1>
-      <p className="text-sm opacity-70">
-        CrackPay needs a connection to show your balance and send money.
-      </p>
-    </main>
+    <Screen>
+      <div className="flex flex-1 items-center justify-center">
+        <EmptyState
+          icon={<Wallet className="h-6 w-6" />}
+          title="You're offline"
+          body="Your money is safe. CrackPay needs a connection to show your balance and send a payment."
+        />
+      </div>
+    </Screen>
   );
 }

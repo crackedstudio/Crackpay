@@ -1,27 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { useToast } from "./Toast";
+import { Check, Copy } from "./icons";
+import { ListRow } from "./ui";
 
-export function CopyRow({ label, value, display }: { label: string; value: string; display?: string }) {
+/** A value worth copying, with the copy built into the whole row. */
+export function CopyRow({
+  label,
+  value,
+  display,
+  icon,
+}: {
+  label: string;
+  value: string;
+  display?: string;
+  icon?: ReactNode;
+}) {
+  const toast = useToast();
   const [copied, setCopied] = useState(false);
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      toast(`${label} copied`);
+      setTimeout(() => setCopied(false), 1600);
     } catch (error) {
       console.error("Copy failed", error);
+      toast("Couldn't copy — select the text instead");
     }
   }
 
   return (
-    <button onClick={copy} className="flex w-full items-center justify-between gap-3 py-3 text-left">
-      <span className="flex min-w-0 flex-col">
-        <span className="text-sm text-muted">{label}</span>
-        <span className="truncate font-medium">{display ?? value}</span>
-      </span>
-      <span className="shrink-0 text-sm text-accent">{copied ? "Copied" : "Copy"}</span>
-    </button>
+    <ListRow
+      label={label}
+      value={display ?? value}
+      icon={icon}
+      onClick={copy}
+      trailing={
+        <span className={`shrink-0 ${copied ? "text-accent" : "text-muted"}`}>
+          {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+        </span>
+      }
+    />
   );
 }

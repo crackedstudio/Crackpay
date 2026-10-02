@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Sheet } from "@/components/Sheet";
+import { Alert, Face } from "@/components/icons";
+import { Button, EmptyState, LinkButton, Screen, Spinner } from "@/components/ui";
 import { arcChain, publicClient } from "@/lib/arc";
 import { handleRequest, toWireError } from "@/lib/miniapp/bridge";
 import { RpcError } from "@/lib/miniapp/errors";
@@ -18,18 +21,24 @@ const UNLIMITED = 1n << 128n;
 
 function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }) {
   if (summary.kind === "approve") {
-    const amount = summary.amount >= UNLIMITED ? "an unlimited amount of" : formatAmountExact(summary.amount);
+    const unlimited = summary.amount >= UNLIMITED;
     return (
-      <p>
-        Allow {app.name} to spend {amount} {summary.token.symbol} from your balance.
-      </p>
+      <div className="flex flex-col items-center gap-2 text-center">
+        <p className="numeric text-3xl font-semibold">
+          {unlimited ? "Unlimited" : `${formatAmountExact(summary.amount)} ${summary.token.symbol}`}
+        </p>
+        <p className="text-muted">
+          {app.name} is asking to spend {unlimited ? `as much ${summary.token.symbol} as it likes` : "up to this"} from your
+          balance, now and later.
+        </p>
+      </div>
     );
   }
   return (
-    <>
-      <p className="text-2xl font-semibold">{formatAmountExact(nativeToBaseCeil(summary.value))} USDC</p>
-      <p>will leave your balance and go to {app.name}.</p>
-    </>
+    <div className="flex flex-col items-center gap-2 text-center">
+      <p className="numeric text-4xl font-semibold">${formatAmountExact(nativeToBaseCeil(summary.value))}</p>
+      <p className="text-muted">will leave your balance and go to {app.name}.</p>
+    </div>
   );
 }
 
@@ -109,11 +118,27 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
     setPending(null);
   }
 
-  if (blocked) return <p className="p-4 text-sm text-red-600">{blocked}</p>;
+  if (blocked) {
+    return (
+      <Screen back="/apps">
+        <div className="flex flex-1 items-center justify-center">
+          <EmptyState
+            icon={<Alert className="h-6 w-6" />}
+            title="This app can't be opened"
+            body={blocked}
+            action={
+              <LinkButton href="/apps" size="md" variant="secondary">
+                Back to apps
+              </LinkButton>
+            }
+          />
+        </div>
+      </Screen>
+    );
+  }
 
-  const button = "flex-1 rounded px-3 py-2";
   return (
-    <div className="relative mx-auto flex w-full max-w-[420px] flex-1 flex-col">
+    <div className="relative mx-auto flex w-full max-w-[460px] flex-1 flex-col">
       {src && (
         <iframe
           ref={frame}
@@ -128,28 +153,32 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
         />
       )}
 
-      {(pending || sending) && (
-        <div className="absolute inset-0 flex items-end bg-black/50">
-          <div className="flex w-full flex-col gap-3 rounded-t-2xl bg-background p-4 text-sm">
-            {pending ? (
-              <>
-                <p className="opacity-70">
-                  {app.name} · {new URL(app.url).host}
-                </p>
-                <Summary app={app} summary={pending.summary} />
-                <div className="flex gap-2">
-                  <button className={`${button} border border-neutral-400`} onClick={() => decide(false)}>
-                    Cancel
-                  </button>
-                  <button className={`${button} bg-foreground text-background`} onClick={() => decide(true)}>
-                    Confirm
-                  </button>
-                </div>
-              </>
-            ) : (
-              <p>Sending…</p>
-            )}
+      {pending && (
+        <Sheet title="Approve this?" onClose={() => decide(false)}>
+          {/* Who is asking, stated plainly: the host name is the only thing that
+              cannot be faked by the app's own content. */}
+          <p className="text-center text-sm text-muted">
+            Requested by <span className="font-medium text-foreground">{new URL(app.url).host}</span>
+          </p>
+          <div className="py-2">
+            <Summary app={app} summary={pending.summary} />
           </div>
+          <div className="flex flex-col gap-2 pb-2">
+            <Button onClick={() => decide(true)}>
+              <Face className="h-5 w-5" />
+              Approve
+            </Button>
+            <Button variant="ghost" onClick={() => decide(false)}>
+              Cancel
+            </Button>
+          </div>
+        </Sheet>
+      )}
+
+      {sending && (
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-background/90 backdrop-blur-sm">
+          <Spinner className="h-6 w-6 text-muted" />
+          <p className="text-sm text-muted">Sending…</p>
         </div>
       )}
     </div>

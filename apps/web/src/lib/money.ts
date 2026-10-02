@@ -118,6 +118,21 @@ export function formatAmount(base: bigint, decimals = 2): string {
 }
 
 /**
+ * Base units → the plain decimal string a keypad would have produced ("20",
+ * "1234.5"). No grouping separators, so it can be typed on from and handed
+ * straight back to `parseAmount`. For prefilling an amount field.
+ */
+export function toInputValue(base: bigint): string {
+  assertNonNegative(base);
+  const fraction = (base % BASE_UNIT)
+    .toString()
+    .padStart(USDC_DECIMALS, "0")
+    .replace(/0+$/, "");
+  const whole = (base / BASE_UNIT).toString();
+  return fraction ? `${whole}.${fraction}` : whole;
+}
+
+/**
  * Full-precision display with no rounding: at least 2 decimals, up to 6,
  * trailing zeros trimmed. For receipts and confirm screens.
  */

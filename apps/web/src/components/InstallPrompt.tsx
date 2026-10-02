@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Share, X } from "./icons";
+import { Button, IconButton } from "./ui";
 
 // Chromium-only event; not in the DOM lib types.
 interface BeforeInstallPromptEvent extends Event {
@@ -10,20 +12,29 @@ interface BeforeInstallPromptEvent extends Event {
 
 type Platform = "unknown" | "installed" | "ios" | "other";
 
+// Asking once is a suggestion; asking every visit is nagging.
+const DISMISSED_KEY = "crackpay.install-dismissed";
+
 function detectPlatform(): Platform {
   if (window.matchMedia("(display-mode: standalone)").matches) return "installed";
   if (/iPad|iPhone|iPod/.test(navigator.userAgent)) return "ios";
   return "other";
 }
 
+/**
+ * The nudge to install. Appears as a card the user can dismiss for good, and
+ * only where it is relevant: not inside a flow, and never once installed.
+ */
 export function InstallPrompt() {
   const [platform, setPlatform] = useState<Platform>("unknown");
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
+  const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
     // Browser-only checks, so they have to run after hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform(detectPlatform());
+    setDismissed(localStorage.getItem(DISMISSED_KEY) === "1");
 
     const onPrompt = (event: Event) => {
       event.preventDefault();
@@ -41,17 +52,14 @@ export function InstallPrompt() {
     };
   }, []);
 
-  if (platform === "unknown" || platform === "installed") return null;
-
-  if (platform === "ios") {
-    return (
-      <p className="text-sm">
-        To install CrackPay, tap the Share button, then &ldquo;Add to Home Screen&rdquo;.
-      </p>
-    );
+  function dismiss() {
+    setDismissed(true);
+    try {
+      localStorage.setItem(DISMISSED_KEY, "1");
+    } catch (error) {
+      console.error("Could not remember the dismissal", error);
+    }
   }
-
-  if (!deferred) return null;
 
   async function install() {
     if (!deferred) return;
@@ -60,12 +68,32 @@ export function InstallPrompt() {
     setDeferred(null);
   }
 
+  if (platform === "unknown" || platform === "installed" || dismissed) return null;
+  if (platform === "other" && !deferred) return null;
+
   return (
-    <button
-      className="w-full rounded bg-foreground px-3 py-2 text-sm text-background"
-      onClick={install}
-    >
-      Add CrackPay to your home screen
-    </button>
+    <div className="relative flex animate-fade flex-col gap-3 rounded-3xl bg-surface p-4">
+      <IconButton label="Dismiss" onClick={dismiss} className="absolute right-1 top-1 h-9 w-9 text-muted">
+        <X className="h-4 w-4" />
+      </IconButton>
+      <div className="flex flex-col gap-1 pr-8">
+        <p className="font-semibold">Keep CrackPay on your home screen</p>
+        <p className="text-sm text-muted">
+          {platform === "ios"
+            ? "Tap Share, then “Add to Home Screen”. It opens full screen, like an app."
+            : "It opens full screen, works offline and loads instantly."}
+        </p>
+      </div>
+      {platform === "ios" ? (
+        <p className="flex items-center gap-2 text-sm font-medium">
+          <Share className="h-5 w-5" />
+          Share → Add to Home Screen
+        </p>
+      ) : (
+        <Button size="md" variant="secondary" onClick={install}>
+          Add to home screen
+        </Button>
+      )}
+    </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   nativeToBase,
   nativeToBaseCeil,
   parseAmount,
+  toInputValue,
   type MoneyErrorCode,
 } from "./money";
 
@@ -177,5 +178,24 @@ describe("formatAmountExact", () => {
     for (const base of [0n, 1n, 999_999n, 1_000_000n, 98_765_432_109_876n]) {
       expect(parseAmount(formatAmountExact(base))).toBe(base);
     }
+  });
+});
+
+describe("toInputValue", () => {
+  it("is a plain decimal with no grouping, ready to type on from", () => {
+    expect(toInputValue(20_000_000n)).toBe("20");
+    expect(toInputValue(1_234_500_000n)).toBe("1234.5");
+    expect(toInputValue(1n)).toBe("0.000001");
+    expect(toInputValue(0n)).toBe("0");
+  });
+
+  it("round-trips through parseAmount", () => {
+    for (const base of [0n, 1n, 500_000n, 12_340_000n, 999_999_999_999n]) {
+      expect(parseAmount(toInputValue(base))).toBe(base);
+    }
+  });
+
+  it("refuses a negative amount", () => {
+    expect(() => toInputValue(-1n)).toThrow(MoneyError);
   });
 });
