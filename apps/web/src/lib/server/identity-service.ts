@@ -33,6 +33,11 @@ export type IdentityDeps = {
   /** Keys OTP code hashes. */
   secret: string;
   now(): number;
+  /**
+   * Development only: hand the locally generated code back to the browser, so
+   * sign-up can be tested with no SMS provider. Never set in production.
+   */
+  exposeDevCode?: boolean;
   /** Overridable for tests; defaults to a random 6-digit code. */
   generateCode?(): string;
 };
@@ -49,7 +54,11 @@ function sameHash(a: string, b: string): boolean {
 }
 
 /** Sends a one-time code to `phoneInput` and returns the challenge to verify it against. */
-export async function startOtp(deps: IdentityDeps, phoneInput: string, ip: string): Promise<{ challengeId: string }> {
+export async function startOtp(
+  deps: IdentityDeps,
+  phoneInput: string,
+  ip: string,
+): Promise<{ challengeId: string; devCode?: string }> {
   const phone = normalizePhone(phoneInput);
   const lookup = phoneLookup(deps.pepper, phone);
 
@@ -75,7 +84,7 @@ export async function startOtp(deps: IdentityDeps, phoneInput: string, ip: strin
     expiresAt,
   });
   await deps.sms.send(phone, `Your CrackPay code is ${code}. It expires in 10 minutes. Never share it.`);
-  return { challengeId };
+  return deps.exposeDevCode ? { challengeId, devCode: code } : { challengeId };
 }
 
 export type VerifiedPhone = { phoneLookup: Hex; user: User | null };

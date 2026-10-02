@@ -13,7 +13,7 @@ import { loginWithPasskey, registerPasskey } from "@/lib/wallet";
 
 type Step =
   | { name: "phone" }
-  | { name: "code"; challengeId: string }
+  | { name: "code"; challengeId: string; devCode?: string }
   /** The number already has an account: sign in with its passkey. */
   | { name: "sign-in"; account: Address; handle: string }
   | { name: "handle" }
@@ -75,9 +75,9 @@ export default function Onboarding() {
 
   const sendCode = () =>
     run(async () => {
-      const { challengeId } = await api.post<{ challengeId: string }>("/api/otp/start", { phone });
+      const started = await api.post<{ challengeId: string; devCode?: string }>("/api/otp/start", { phone });
       setCode("");
-      setStep({ name: "code", challengeId });
+      setStep({ name: "code", ...started });
     });
 
   const verifyCode = (challengeId: string) =>
@@ -162,6 +162,12 @@ export default function Onboarding() {
             value={code}
             onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
           />
+          {step.devCode && (
+            <p className="rounded-xl border border-dashed border-line p-3 text-sm text-muted">
+              Development mode: no SMS was sent. Your code is{" "}
+              <span className="font-mono font-semibold text-foreground">{step.devCode}</span>.
+            </p>
+          )}
           <ErrorText>{error}</ErrorText>
           <div className="mt-auto flex flex-col gap-2">
             <Button disabled={busy || code.length !== 6}>Continue</Button>

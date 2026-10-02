@@ -50,6 +50,7 @@ export function identityDeps(): IdentityDeps {
     store: createStore(),
     sms: consoleSms,
     verifier: createVerifier(),
+    exposeDevCode: !isProduction,
     registry: {
       resolveHandle: (handle) => publicClient.readContract({ ...read, functionName: "resolveHandle", args: [handle] }),
       resolvePhone: (hash) => publicClient.readContract({ ...read, functionName: "resolvePhone", args: [hash] }),

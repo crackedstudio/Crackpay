@@ -78,6 +78,18 @@ describe("OTP", () => {
     expect(await code(verifyOtp(deps, challengeId, sentCode()))).toBe("code_expired");
   });
 
+  it("returns the code to the caller only when development exposure is on", async () => {
+    expect(await startOtp(deps, PHONE, "1.1.1.1")).not.toHaveProperty("devCode");
+
+    deps.exposeDevCode = true;
+    const started = await startOtp(deps, PHONE, "1.1.1.1");
+    expect(started.devCode).toBe(sentCode());
+
+    // A hosted verifier holds the code, so there is nothing to expose.
+    deps.verifier = { start: async () => "ref", check: async () => true };
+    expect(await startOtp(deps, PHONE, "1.1.1.1")).not.toHaveProperty("devCode");
+  });
+
   it("rejects malformed numbers before sending anything", async () => {
     for (const phone of ["08012345678", "+0123456789", "+12", "+1234567890123456", "hello", ""]) {
       expect(await code(startOtp(deps, phone, "1.1.1.1"))).toBe("invalid_phone");
