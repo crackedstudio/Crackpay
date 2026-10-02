@@ -43,8 +43,10 @@ every user's salt.
 | `SESSION_SECRET` | Signs cookies and OTP hashes. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Database. |
 
-Apply the schema with `supabase link --project-ref <ref>` then `supabase db push`
-from the repo root. All tables have row level security on with no policies: only
+Apply schema changes from the repo root with
+`supabase db push --db-url "$SUPABASE_DB_URL"`, where `SUPABASE_DB_URL` is the
+session-pooler connection string in `apps/web/.env.local`. The CLI login on the
+development machine does not own the CrackPay project, so `supabase link` is not used. All tables have row level security on with no policies: only
 the service role can touch them.
 
 ## Development fallbacks
