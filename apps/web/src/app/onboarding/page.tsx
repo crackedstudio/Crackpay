@@ -6,15 +6,16 @@ import { isAddressEqual, type Address, type Hex } from "viem";
 import { Avatar } from "@/components/Avatar";
 import { CodeInput } from "@/components/CodeInput";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import { Bolt, Check, Face, Shield } from "@/components/icons";
+import { Bolt, Face, Shield } from "@/components/icons";
 import {
   Button,
   Callout,
+  Chip,
   ErrorText,
   LinkButton,
   Screen,
   ScreenSkeleton,
-  Spinner,
+  Stamp,
   StepProgress,
   TextField,
 } from "@/components/ui";
@@ -76,8 +77,8 @@ function Ask({ title, lede, children }: { title: string; lede?: string; children
   return (
     <div className="flex flex-1 flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{title}</h1>
-        {lede && <p className="text-muted">{lede}</p>}
+        <h1 className="ask text-3xl">{title}</h1>
+        {lede && <p className="text-base leading-[1.45] text-muted">{lede}</p>}
       </div>
       {children}
     </div>
@@ -276,7 +277,13 @@ function Onboarding() {
             <Button loading={busy} disabled={code.length !== 6} form="code-form">
               Continue
             </Button>
-            <Button type="button" variant="ghost" disabled={busy || resendIn > 0} onClick={sendCode}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="numeric h-10"
+              disabled={busy || resendIn > 0}
+              onClick={sendCode}
+            >
               {resendIn > 0 ? `Send a new code in ${resendIn}s` : "Send a new code"}
             </Button>
           </>
@@ -309,11 +316,13 @@ function Onboarding() {
           </Button>
         }
       >
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <Avatar seed={step.handle} size="lg" />
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold">Welcome back, @{step.handle}</h1>
-            <p className="text-muted">This number already has an account. Use its passkey to sign in on this device.</p>
+        <div className="flex flex-1 flex-col justify-center gap-5.5">
+          <Avatar seed={step.handle} size="xl" ring />
+          <div className="flex flex-col gap-2.5">
+            <h1 className="ask text-3xl">Welcome back, @{step.handle}</h1>
+            <p className="text-[1.0625rem] leading-[1.45] text-muted">
+              This number already has an account. Use its passkey to sign in on this device.
+            </p>
           </div>
           <ErrorText>{error}</ErrorText>
         </div>
@@ -328,7 +337,7 @@ function Onboarding() {
         footer={
           <>
             <Button onClick={createAccount}>Create my account</Button>
-            <p className="px-4 text-center text-xs text-muted">
+            <p className="px-2 pb-1 text-center text-xs leading-[1.4] text-muted">
               Your phone will ask to save a passkey for CrackPay. Approve it to finish.
             </p>
           </>
@@ -338,19 +347,22 @@ function Onboarding() {
           title="One last thing"
           lede="CrackPay has no password and no seed phrase. Your phone's own lock screen approves everything."
         >
-          <ul className="flex flex-col gap-4 py-2">
+          <ul className="border-t-[1.5px] border-ink">
             {[
               { Icon: Face, title: "Your face, finger or PIN", body: "The same unlock you already use approves each payment." },
               { Icon: Shield, title: "Nothing to write down", body: "The key stays on your device and syncs with your phone account." },
               { Icon: Bolt, title: "Takes a few seconds", body: "We set up your account and your @handle in one go." },
-            ].map(({ Icon, title, body }) => (
-              <li key={title} className="flex gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+            ].map(({ Icon, title, body }, index, all) => (
+              <li
+                key={title}
+                className={`flex gap-3.5 py-4 ${index === all.length - 1 ? "border-b-[1.5px] border-ink" : "border-b border-hair"}`}
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border-[1.5px] border-ink">
                   <Icon className="h-5 w-5" />
                 </span>
-                <span className="flex flex-col">
-                  <span className="font-medium">{title}</span>
-                  <span className="text-sm text-muted">{body}</span>
+                <span className="flex flex-col gap-0.5">
+                  <span className="font-semibold">{title}</span>
+                  <span className="text-sm leading-5 text-muted">{body}</span>
                 </span>
               </li>
             ))}
@@ -371,18 +383,22 @@ function Onboarding() {
     return (
       <Screen>
         <div className="flex flex-1 flex-col justify-center gap-6">
-          <h1 className="text-2xl font-semibold">Setting up your account</h1>
-          <ul className="flex flex-col gap-4">
+          <h1 className="ask text-[1.75rem]">Setting up your account</h1>
+          {/* Mono tags rather than spinners: progress stays legible without motion. */}
+          <ul className="border-t-[1.5px] border-ink" aria-live="polite">
             {stages.map((stage, index) => (
-              <li key={stage.key} className={`flex items-center gap-3 ${index <= current ? "" : "opacity-40"}`}>
-                <span className="flex h-6 w-6 items-center justify-center text-accent">
-                  {index < current ? <Check className="h-5 w-5" /> : index === current ? <Spinner className="h-5 w-5" /> : null}
+              <li
+                key={stage.key}
+                className={`flex items-center gap-3.5 border-b border-hair py-4 ${index <= current ? "" : "opacity-40"}`}
+              >
+                <span className="label w-11 text-ink">
+                  {index < current ? "Done" : index === current ? "Now" : "Next"}
                 </span>
-                <span className={index === current ? "font-medium" : ""}>{stage.label}</span>
+                <span className={`flex-1 ${index === current ? "font-bold" : ""}`}>{stage.label}</span>
               </li>
             ))}
           </ul>
-          <p className="text-sm text-muted">Keep this screen open — it only takes a moment.</p>
+          <p className="text-sm text-muted">Keep this screen open. It only takes a moment.</p>
         </div>
       </Screen>
     );
@@ -394,20 +410,18 @@ function Onboarding() {
         footer={
           <>
             <LinkButton href={next}>{next === "/" ? "Go to my account" : "Continue"}</LinkButton>
-            <LinkButton href="/receive" variant="ghost">
+            <LinkButton href="/receive" variant="ghost" className="h-12">
               Share my handle to get paid
             </LinkButton>
           </>
         }
       >
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <span className="flex h-20 w-20 animate-pop items-center justify-center rounded-full bg-accent text-accent-foreground">
-            <Check className="h-10 w-10" />
-          </span>
-          <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-semibold tracking-tight">You&apos;re all set</h1>
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+          <Stamp size="md" />
+          <div className="flex flex-col gap-1.5">
+            <h1 className="display text-[2.125rem]">You&apos;re all set</h1>
             <p className="text-lg text-muted">
-              You can be paid at <span className="font-medium text-foreground">@{step.handle}</span>
+              You can be paid at <span className="font-bold text-ink">@{step.handle}</span>
             </p>
           </div>
         </div>
@@ -465,17 +479,15 @@ function Onboarding() {
           {valid && available === false && (
             <div className="flex flex-wrap gap-2">
               {suggest(cleanHandle).map((option) => (
-                <button
+                <Chip
                   key={option}
-                  type="button"
                   onClick={() => {
                     setHandle(option);
                     setAvailable(null);
                   }}
-                  className="pressable rounded-full bg-surface px-4 py-2 text-sm font-medium"
                 >
                   @{option}
-                </button>
+                </Chip>
               ))}
             </div>
           )}

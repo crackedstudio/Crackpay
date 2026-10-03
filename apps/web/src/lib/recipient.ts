@@ -24,6 +24,7 @@ export function recipientKind(input: string): RecipientKind {
 /** Turns a handle, a phone number or an address into someone to pay. */
 export async function resolveRecipient(input: string): Promise<Recipient> {
   const kind = recipientKind(input);
+  if (process.env.NEXT_PUBLIC_DEMO === "1") return { address: "0x00000000000000000000000000000000000000aa" as Address, label: input.startsWith("@") ? input : "@" + input };
 
   if (kind === "address") {
     const address = parseRecipient(input);

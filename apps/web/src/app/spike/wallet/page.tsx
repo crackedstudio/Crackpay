@@ -67,7 +67,7 @@ export default function WalletSpike() {
     });
 
   const input = "w-full rounded border border-neutral-400 px-3 py-2";
-  const button = "w-full rounded bg-foreground px-3 py-2 text-background disabled:opacity-40";
+  const button = "w-full rounded bg-ink px-3 py-2 text-paper disabled:opacity-40";
 
   return (
     <main className="mx-auto flex w-full max-w-[420px] flex-col gap-4 p-4 text-sm">

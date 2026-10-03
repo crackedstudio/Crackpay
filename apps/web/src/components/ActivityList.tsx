@@ -6,8 +6,8 @@ import { fetchActivity, type ActivityItem } from "@/lib/activity";
 import { dollars, shortAddress } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { ReceiptSheet } from "./ReceiptSheet";
-import { ArrowDown, ArrowUp, Clock, Refresh } from "./icons";
-import { Button, EmptyState, Skeleton } from "./ui";
+import { ArrowDown, ArrowUp, Refresh } from "./icons";
+import { Button, EmptyState, SectionHeading, Skeleton } from "./ui";
 
 const dayLabel = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 const timeLabel = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
@@ -38,7 +38,7 @@ function Rows() {
     <div className="flex flex-col gap-5 py-2">
       {[0, 1, 2].map((row) => (
         <div key={row} className="flex items-center gap-3">
-          <Skeleton className="h-11 w-11" />
+          <Skeleton className="h-[2.625rem] w-[2.625rem] rounded-full" />
           <div className="flex flex-1 flex-col gap-2">
             <Skeleton className="h-4 w-28" />
             <Skeleton className="h-3 w-16" />
@@ -50,15 +50,59 @@ function Rows() {
   );
 }
 
+/**
+ * One payment. The badge on the avatar is the direction, the amount's colour is
+ * the direction again — money green only ever means money arriving.
+ */
+function Row({ item, when, onOpen }: { item: ActivityItem; when: string; onOpen: () => void }) {
+  const incoming = item.direction === "in";
+  const who = item.handle ? `@${item.handle}` : shortAddress(item.counterparty);
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="pressable flex w-full items-center gap-3 border-b border-hair py-3 text-left"
+      >
+        <span className="relative shrink-0">
+          <Avatar seed={item.handle ?? item.counterparty} />
+          <span
+            className={`absolute -bottom-[3px] -right-[3px] flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] border-ink ${
+              incoming ? "bg-go text-go-ink" : "bg-card text-ink"
+            }`}
+          >
+            {incoming ? (
+              <ArrowDown className="h-[0.6875rem] w-[0.6875rem]" strokeWidth={2.5} />
+            ) : (
+              <ArrowUp className="h-[0.6875rem] w-[0.6875rem]" strokeWidth={2.5} />
+            )}
+          </span>
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-px">
+          <span className="truncate font-semibold">{who}</span>
+          <span className="font-mono text-[0.6875rem] text-muted">{when}</span>
+        </span>
+        <span className={`numeric shrink-0 font-bold ${incoming ? "text-money" : "text-ink"}`}>
+          {incoming ? "+" : "−"}
+          {dollars(item.amount)}
+        </span>
+      </button>
+    </li>
+  );
+}
+
 export function ActivityList({
   account,
   limit,
   refreshKey,
+  grouped = false,
   emptyAction,
 }: {
   account: Address;
   limit: number;
   refreshKey?: unknown;
+  /** Day headings with a count, for the full history. Home shows a flat list. */
+  grouped?: boolean;
   /** Shown in the empty state — on Home this is the nudge to get funded. */
   emptyAction?: ReactNode;
 }) {
@@ -105,7 +149,7 @@ export function ActivityList({
   if (items.length === 0) {
     return (
       <EmptyState
-        icon={<Clock className="h-6 w-6" />}
+        figure="$0.00"
         title="No payments yet"
         body="Money you send and receive shows up here, with a receipt for each one."
         action={emptyAction}
@@ -113,50 +157,46 @@ export function ActivityList({
     );
   }
 
+  const receipt = open && <ReceiptSheet item={open} onClose={() => setOpen(null)} />;
+
+  if (!grouped) {
+    return (
+      <>
+        <ul className="border-t border-hair">
+          {items.map((item) => (
+            <Row
+              key={item.id}
+              item={item}
+              when={`${heading(item.time)} · ${timeLabel.format(item.time)}`}
+              onOpen={() => setOpen(item)}
+            />
+          ))}
+        </ul>
+        {receipt}
+      </>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-col gap-5">
         {groupByDay(items).map(([label, group]) => (
-          <section key={label} className="flex flex-col gap-1">
-            <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">{label}</h3>
+          <section key={label} className="flex flex-col gap-1.5">
+            <SectionHeading
+              level={3}
+              trailing={<span className="font-medium text-muted">{group.length === 1 ? "1 payment" : `${group.length} payments`}</span>}
+            >
+              {label}
+            </SectionHeading>
             <ul>
-              {group.map((item) => {
-                const incoming = item.direction === "in";
-                const who = item.handle ? `@${item.handle}` : shortAddress(item.counterparty);
-                return (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      onClick={() => setOpen(item)}
-                      className="pressable flex w-full items-center gap-3 rounded-2xl py-2.5 text-left"
-                    >
-                      <span className="relative">
-                        <Avatar seed={item.handle ?? item.counterparty} />
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background ${
-                            incoming ? "bg-accent text-accent-foreground" : "bg-surface text-muted"
-                          }`}
-                        >
-                          {incoming ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />}
-                        </span>
-                      </span>
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate font-medium">{who}</span>
-                        <span className="text-sm text-muted">{timeLabel.format(item.time)}</span>
-                      </span>
-                      <span className={`numeric shrink-0 font-semibold ${incoming ? "text-accent" : ""}`}>
-                        {incoming ? "+" : "−"}
-                        {dollars(item.amount)}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
+              {group.map((item) => (
+                <Row key={item.id} item={item} when={timeLabel.format(item.time)} onOpen={() => setOpen(item)} />
+              ))}
             </ul>
           </section>
         ))}
       </div>
-      {open && <ReceiptSheet item={open} onClose={() => setOpen(null)} />}
+      {receipt}
     </>
   );
 }

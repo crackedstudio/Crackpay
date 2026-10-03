@@ -41,7 +41,7 @@ export default function AdminMiniApps() {
           <h1 className="text-xl font-semibold">Mini Apps</h1>
           <p className="text-sm text-muted">Only apps listed and switched on here appear in CrackPay.</p>
         </div>
-        <Link href="/admin/apps/new" className="inline-flex h-9 items-center rounded-lg bg-foreground px-3 text-sm font-medium text-background">
+        <Link href="/admin/apps/new" className="inline-flex h-9 items-center rounded-lg bg-ink px-3 text-sm font-medium text-paper">
           New Mini App
         </Link>
       </div>
@@ -51,11 +51,11 @@ export default function AdminMiniApps() {
       {apps === null ? (
         <p className="text-sm text-muted">Loading…</p>
       ) : apps.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-card p-6 text-sm text-muted">No Mini Apps yet. Add the first one.</p>
+        <p className="rounded-md border border-hair bg-card p-6 text-sm text-muted">No Mini Apps yet. Add the first one.</p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-card">
+        <div className="overflow-x-auto rounded-md border border-hair bg-card">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-line text-muted">
+            <thead className="border-b border-hair text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">App</th>
                 <th className="px-4 py-3 font-medium">Address</th>
@@ -65,7 +65,7 @@ export default function AdminMiniApps() {
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-hair">
               {apps.map((app) => (
                 <tr key={app.id}>
                   <td className="px-4 py-3">
@@ -83,7 +83,7 @@ export default function AdminMiniApps() {
                       <AdminButton disabled={busyId === app.id} onClick={() => toggle(app)}>
                         {app.enabled ? "Switch off" : "Switch on"}
                       </AdminButton>
-                      <Link href={`/admin/apps/${app.id}`} className="inline-flex h-9 items-center rounded-lg border border-line bg-card px-3 font-medium">
+                      <Link href={`/admin/apps/${app.id}`} className="inline-flex h-9 items-center rounded-lg border border-hair bg-card px-3 font-medium">
                         Edit
                       </Link>
                     </div>

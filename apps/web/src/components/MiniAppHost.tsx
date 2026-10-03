@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppIcon } from "@/components/AppIcon";
 import { Sheet } from "@/components/Sheet";
-import { Alert, ArrowLeft, Check, External, Face, Info, Refresh, Shield } from "@/components/icons";
-import { Button, Callout, EmptyState, IconButton, LinkButton, Screen, Spinner } from "@/components/ui";
+import { Alert, ArrowLeft, External, Face, Info, Refresh, Shield } from "@/components/icons";
+import { Button, Callout, EmptyState, IconButton, LinkButton, Screen, Spinner, Stamp } from "@/components/ui";
 import { arcChain, publicClient } from "@/lib/arc";
 import { useUsdcBalance } from "@/lib/balance";
 import { developer } from "@/lib/developer";
@@ -76,7 +76,7 @@ function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }
     const unlimited = summary.amount >= UNLIMITED;
     return (
       <div className="flex flex-col items-center gap-2 text-center">
-        <p className="numeric text-3xl font-semibold">
+        <p className="figure text-3xl">
           {unlimited ? "Unlimited" : `${formatAmountExact(summary.amount)} ${summary.token.symbol}`}
         </p>
         <p className="text-muted">
@@ -89,7 +89,7 @@ function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }
   if (summary.kind === "transfer") {
     return (
       <div className="flex flex-col items-center gap-2 text-center">
-        <p className="numeric text-4xl font-semibold">
+        <p className="figure text-4xl">
           {formatAmountExact(summary.amount)} {summary.token.symbol}
         </p>
         <p className="text-muted">
@@ -103,7 +103,7 @@ function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }
   if (summary.value === 0n) {
     return (
       <div className="flex flex-col items-center gap-2 text-center">
-        <p className="text-lg font-semibold">No money leaves your balance</p>
+        <p className="text-lg font-bold">No money leaves your balance</p>
         <p className="text-muted">
           <Recipient app={app} address={summary.to} /> is asking to run something on your behalf.
         </p>
@@ -112,7 +112,7 @@ function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }
   }
   return (
     <div className="flex flex-col items-center gap-2 text-center">
-      <p className="numeric text-4xl font-semibold">${formatAmountExact(nativeToBaseCeil(summary.value))}</p>
+      <p className="figure text-4xl">${formatAmountExact(nativeToBaseCeil(summary.value))}</p>
       <p className="text-muted">
         will leave your balance and go to <Recipient app={app} address={summary.to} />.
       </p>
@@ -121,11 +121,11 @@ function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }
 }
 
 /** One fact being checked at a glance, in the confirmation sheet. */
-function Fact({ label, value, tone }: { label: string; value: string; tone?: "accent" }) {
+function Fact({ label, value, tone }: { label: string; value: string; tone?: "money" }) {
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3">
       <span className="text-sm text-muted">{label}</span>
-      <span className={`numeric text-sm font-medium ${tone === "accent" ? "text-accent" : ""}`}>{value}</span>
+      <span className={`numeric text-sm font-semibold ${tone === "money" ? "text-money" : ""}`}>{value}</span>
     </div>
   );
 }
@@ -307,20 +307,21 @@ export function MiniAppHost({
     <div className="relative mx-auto flex w-full max-w-[460px] flex-1 flex-col overflow-hidden">
       {/* CrackPay's own bar, above the app's page: whose screen this is, and the
           balance the app is about to spend from. */}
-      <header className="flex items-center gap-1 border-b border-line bg-background px-1.5 pt-[env(safe-area-inset-top)]">
+      <header className="flex items-center gap-1.5 border-b-[1.5px] border-ink bg-paper px-1.5 pt-[env(safe-area-inset-top)]">
         <a
           href={exitHref}
           aria-label={`Close ${app.name}`}
-          className="pressable flex h-12 w-11 shrink-0 items-center justify-center rounded-full"
+          className="pressable flex h-12 w-11 shrink-0 items-center justify-center"
         >
           <ArrowLeft className="h-5 w-5" />
         </a>
         <span className="flex min-w-0 flex-1 flex-col py-2 leading-tight">
-          <span className="truncate text-[0.9375rem] font-semibold">{app.name}</span>
-          <span className="truncate text-[0.6875rem] text-muted">{host}</span>
+          <span className="truncate text-[0.9375rem] font-bold">{app.name}</span>
+          <span className="truncate font-mono text-[0.625rem] text-muted">{host}</span>
         </span>
+        {/* The balance the app is about to spend from, ruled off as a fact. */}
         {balance !== null && (
-          <span className="numeric shrink-0 rounded-full bg-surface px-3 py-1.5 text-[0.8125rem] font-semibold">
+          <span className="numeric flex h-[1.875rem] shrink-0 items-center rounded-sm border-[1.5px] border-ink px-2.5 text-sm font-extrabold">
             {dollars(balance)}
           </span>
         )}
@@ -330,7 +331,7 @@ export function MiniAppHost({
       </header>
 
       {app.test && (
-        <p className="flex items-center gap-2 bg-danger-soft px-4 py-1.5 text-[0.6875rem] font-medium text-danger">
+        <p className="label flex items-center gap-2 border-b-[1.5px] border-danger bg-danger-soft px-4 py-1.5 text-danger">
           <Alert className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">Test app · not reviewed by CrackPay</span>
         </p>
@@ -357,16 +358,16 @@ export function MiniAppHost({
 
         {/* Opening an app looks like opening an app, instead of a white rectangle. */}
         {!loaded && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 bg-background px-8 text-center">
-            <AppIcon app={app} size="lg" className="animate-pop shadow-lift" />
-            <div className="flex flex-col gap-1">
-              <p className="font-semibold">{app.name}</p>
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3.5 bg-paper px-8 text-center">
+            <AppIcon app={app} size="lg" className="animate-pop shadow-slab" />
+            <div className="flex flex-col gap-0.5">
+              <p className="text-[1.1875rem] font-extrabold">{app.name}</p>
               {app.publisher && <p className="text-sm text-muted">{app.publisher}</p>}
             </div>
 
             {stalled ? (
-              <div className="flex w-full max-w-[16rem] flex-col gap-3">
-                <p className="text-sm text-muted">
+              <div className="flex w-full max-w-[17rem] flex-col gap-3 pt-1">
+                <p className="text-sm leading-5 text-muted">
                   This is taking longer than it should. The app may be down, or it may not allow CrackPay to open it.
                 </p>
                 <Button size="md" variant="secondary" onClick={reload}>
@@ -378,13 +379,18 @@ export function MiniAppHost({
                 </a>
               </div>
             ) : (
-              <p className="flex items-center gap-2 text-sm text-muted">
-                <Spinner className="h-4 w-4" />
-                Opening…
-              </p>
+              <>
+                {/* A bar that fills rather than a spinner that turns: the
+                    handover has a length, and this says how far through it is. */}
+                <span className="mt-1.5 h-1 w-[8.75rem] overflow-hidden rounded-sm border-[1.5px] border-ink">
+                  <span aria-hidden className="block h-full origin-left animate-bar bg-ink" />
+                </span>
+                <p className="font-mono text-[0.6875rem] text-muted">Opening…</p>
+              </>
             )}
 
-            <p className="absolute bottom-6 flex items-center gap-1.5 text-xs text-muted">
+            {/* The handover claimed out loud: the app is a guest here. */}
+            <p className="label absolute bottom-7 flex h-[1.875rem] items-center gap-2 rounded-sm border-[1.5px] border-ink px-3 text-ink">
               <Shield className="h-3.5 w-3.5" />
               Runs inside CrackPay
             </p>
@@ -397,15 +403,15 @@ export function MiniAppHost({
           <div className="flex items-center gap-3.5">
             <AppIcon app={app} size="lg" />
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-lg font-semibold">{app.name}</span>
+              <span className="truncate text-base font-bold">{app.name}</span>
               {app.publisher && <span className="truncate text-sm text-muted">{app.publisher}</span>}
               {category && <span className="truncate text-sm text-muted">{category}</span>}
             </span>
           </div>
 
-          <p className="text-sm text-muted">{app.description}</p>
+          <p className="text-sm leading-5 text-muted">{app.description}</p>
 
-          <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line">
+          <div className="divide-y divide-hair overflow-hidden rounded-lg border-[1.5px] border-ink">
             <a
               href={app.url}
               target="_blank"
@@ -417,10 +423,10 @@ export function MiniAppHost({
               <External className="h-4 w-4 shrink-0 text-muted" />
             </a>
             {handle && <Fact label="Paying as" value={`@${handle}`} />}
-            <Fact label="Network fee" value="Free" tone="accent" />
+            <Fact label="Network fee" value="Free" tone="money" />
           </div>
 
-          <ul className="flex flex-col gap-2.5 text-sm">
+          <ul className="flex flex-col gap-2 text-sm">
             {[
               "It asks you before anything leaves your balance.",
               "It never sees your passkey and can't sign for you.",
@@ -429,10 +435,10 @@ export function MiniAppHost({
                 : null,
             ]
               .filter((line): line is string => line !== null)
-              .map((line) => (
-                <li key={line} className="flex items-start gap-2.5">
-                  <Check className="mt-px h-4 w-4 shrink-0 text-accent" />
-                  <span className="text-muted">{line}</span>
+              .map((line, index) => (
+                <li key={line} className="flex gap-2.5">
+                  <span className="pt-0.5 font-mono text-[0.6875rem] font-semibold">{`0${index + 1}`}</span>
+                  <span className="leading-5">{line}</span>
                 </li>
               ))}
           </ul>
@@ -466,11 +472,11 @@ export function MiniAppHost({
         <Sheet title={requestTitle(pending.summary)} onClose={() => decide(false)}>
           {/* Who is asking, stated plainly: the host name is the only thing that
               cannot be faked by the app's own content. */}
-          <div className="flex items-center gap-3 rounded-2xl bg-surface p-3">
-            <AppIcon app={app} size="sm" />
-            <span className="flex min-w-0 flex-1 flex-col leading-tight">
-              <span className="truncate text-sm font-medium">Requested by {app.name}</span>
-              <span className="truncate text-xs text-muted">{host}</span>
+          <div className="flex items-center gap-2.5 self-start rounded-md border-[1.5px] border-ink px-2.5 py-2">
+            <AppIcon app={app} size="sm" className="h-7 w-7 rounded-lg text-[0.8125rem]" />
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate text-sm font-bold">Requested by {app.name}</span>
+              <span className="truncate font-mono text-[0.625rem] text-muted">{host}</span>
             </span>
           </div>
 
@@ -478,8 +484,8 @@ export function MiniAppHost({
             <Summary app={app} summary={pending.summary} />
           </div>
 
-          <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line">
-            <Fact label="Network fee" value="Free" tone="accent" />
+          <div className="divide-y divide-hair overflow-hidden rounded-lg border-[1.5px] border-ink">
+            <Fact label="Network fee" value="Free" tone="money" />
             {balance !== null && <Fact label="Your balance" value={dollars(balance)} />}
             {balance !== null && leaving !== null && !short && (
               <Fact label="Left after" value={dollars(balance - leaving)} />
@@ -500,7 +506,7 @@ export function MiniAppHost({
               <Face className="h-5 w-5" />
               {pending.summary.kind === "approve" ? "Allow" : "Confirm"}
             </Button>
-            <Button variant="ghost" onClick={() => decide(false)}>
+            <Button variant="ghost" className="h-12" onClick={() => decide(false)}>
               Cancel
             </Button>
           </div>
@@ -508,22 +514,20 @@ export function MiniAppHost({
       )}
 
       {sending && (
-        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-background/90 backdrop-blur-sm">
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-paper">
           <Spinner className="h-6 w-6 text-muted" />
-          <p className="text-sm text-muted">Sending…</p>
+          <p className="font-mono text-xs text-muted">Sending…</p>
         </div>
       )}
 
       {done && !sending && (
         <div
           role="status"
-          className="absolute inset-0 z-40 flex animate-fade flex-col items-center justify-center gap-3 bg-background/95 backdrop-blur-sm"
+          className="absolute inset-0 z-40 flex animate-fade flex-col items-center justify-center gap-5 bg-paper"
         >
-          <span className="flex h-16 w-16 animate-pop items-center justify-center rounded-full bg-accent text-accent-foreground">
-            <Check className="h-8 w-8" />
-          </span>
-          <p className="text-lg font-semibold">{done.title}</p>
-          <p className="numeric text-sm text-muted">{done.detail}</p>
+          <Stamp size="md" />
+          <p className="display text-3xl">{done.title}</p>
+          <p className="numeric font-mono text-[0.6875rem] text-muted">{done.detail}</p>
         </div>
       )}
     </div>

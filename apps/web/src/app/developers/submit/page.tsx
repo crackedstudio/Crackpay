@@ -51,7 +51,7 @@ export default function SubmitMiniApp() {
     <Screen title="Submit a Mini App" back="/developers">
       <p className="text-muted">
         Fill in the listing file and submit it for review. The fields are explained in{" "}
-        <a className="text-accent" href="/developers/listing.md">
+        <a className="text-money" href="/developers/listing.md">
           Get listed
         </a>
         . Test your app in Developer mode first.
@@ -67,7 +67,7 @@ export default function SubmitMiniApp() {
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted">Listing file (JSON)</span>
           <textarea
-            className="min-h-96 rounded-xl border border-line bg-card p-3 font-mono text-xs outline-none focus:border-foreground"
+            className="min-h-96 rounded-xl border border-hair bg-card p-3 font-mono text-xs outline-none focus:border-ink"
             spellCheck={false}
             autoCapitalize="none"
             autoCorrect="off"

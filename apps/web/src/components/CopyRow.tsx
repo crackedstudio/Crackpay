@@ -11,11 +11,13 @@ export function CopyRow({
   value,
   display,
   icon,
+  className,
 }: {
   label: string;
   value: string;
   display?: string;
   icon?: ReactNode;
+  className?: string;
 }) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
@@ -37,9 +39,10 @@ export function CopyRow({
       label={label}
       value={display ?? value}
       icon={icon}
+      className={className}
       onClick={copy}
       trailing={
-        <span className={`shrink-0 ${copied ? "text-accent" : "text-muted"}`}>
+        <span className={`shrink-0 ${copied ? "text-money" : "text-muted"}`}>
           {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
         </span>
       }

@@ -16,17 +16,19 @@ export function useUsdcBalance(address: Address): { balance: bigint | null; refr
   const [balance, setBalance] = useState<bigint | null>(null);
 
   const refresh = useCallback(() => {
+    if (process.env.NEXT_PUBLIC_DEMO === "1") { setBalance(1240500000n); return; }
     publicClient
       .readContract({ address: contracts[arcChain.id].usdc, abi: erc20Abi, functionName: "balanceOf", args: [address] })
       .then(setBalance, (error: unknown) => console.error("Balance read failed", error));
   }, [address]);
 
   useEffect(() => {
-    refresh();
+    const initialRefresh = setTimeout(refresh, 0);
     const timer = setInterval(refresh, REFRESH_MS);
     const onVisible = () => document.visibilityState === "visible" && refresh();
     document.addEventListener("visibilitychange", onVisible);
     return () => {
+      clearTimeout(initialRefresh);
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };

@@ -45,6 +45,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>({ status: "loading" });
 
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_DEMO === "1") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setState({ status: "ready", account: { address: "0x7a3f0000000000000000000000000000000091c2" } as CrackPaySmartAccount, handle: "sadiq" });
+      return;
+    }
     const credential = loadCredential();
     if (!credential) {
       // localStorage is browser-only, so this has to wait for hydration.

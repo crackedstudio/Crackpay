@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { AppIcon } from "@/components/AppIcon";
 import { ChevronRight, Shield } from "@/components/icons";
-import { Card } from "@/components/ui";
+import { Chip, Label, SectionHeading } from "@/components/ui";
 import type { MiniApp } from "@/config/miniapps";
 import { CATEGORY_LABELS, LISTING_CATEGORIES } from "@/lib/miniapp/listing";
 import {
@@ -33,16 +33,14 @@ function categoriesOf(apps: readonly MiniApp[]): string[] {
 /** One app in the list: what it is, who made it, and where it goes. */
 function AppRow({ app }: { app: MiniApp }) {
   return (
-    <Link href={`/apps/${app.id}`} className="pressable">
-      <Card className="flex items-center gap-3.5 p-3.5">
-        <AppIcon app={app} />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate font-semibold">{app.name}</span>
-          <span className="line-clamp-2 text-sm leading-snug text-muted">{app.description}</span>
-          {app.publisher && <span className="truncate text-xs text-muted/80">{app.publisher}</span>}
-        </span>
-        <ChevronRight className="h-5 w-5 shrink-0 text-muted" />
-      </Card>
+    <Link href={`/apps/${app.id}`} className="pressable flex items-center gap-3.5 border-b border-hair py-3.5">
+      <AppIcon app={app} />
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="truncate font-bold">{app.name}</span>
+        <span className="line-clamp-2 text-sm leading-[1.35] text-muted">{app.description}</span>
+        {app.publisher && <span className="truncate font-mono text-[0.625rem] text-muted">{app.publisher}</span>}
+      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted" />
     </Link>
   );
 }
@@ -51,17 +49,17 @@ function AppRow({ app }: { app: MiniApp }) {
 function RecentRow({ apps }: { apps: readonly MiniApp[] }) {
   return (
     <section className="flex flex-col gap-2.5">
-      <h2 className="px-1 text-sm font-semibold text-muted">Jump back in</h2>
+      <Label>Jump back in</Label>
       {/* Scrolls sideways past the screen edge, so the gutter is undone and redone inside. */}
       <ul className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {apps.map((app) => (
           <li key={app.id} className="shrink-0">
             <Link
               href={`/apps/${app.id}`}
-              className="pressable flex w-[5.5rem] flex-col items-center gap-2 rounded-2xl py-1 text-center"
+              className="pressable flex w-[5.5rem] flex-col items-center gap-2.5 py-1 text-center"
             >
-              <AppIcon app={app} size="lg" className="shadow-card" />
-              <span className="w-full truncate text-xs font-medium">{app.name}</span>
+              <AppIcon app={app} size="lg" className="shadow-[3px_3px_0_var(--ink)]" />
+              <span className="w-full truncate text-xs font-semibold">{app.name}</span>
             </Link>
           </li>
         ))}
@@ -99,17 +97,9 @@ export function MiniAppList({ apps }: { apps: readonly MiniApp[] }) {
           {[null, ...categories].map((category) => {
             const active = filter === category;
             return (
-              <button
-                key={category ?? "all"}
-                type="button"
-                onClick={() => setFilter(category)}
-                aria-pressed={active}
-                className={`pressable h-9 shrink-0 rounded-full px-4 text-sm font-medium ${
-                  active ? "bg-foreground text-background" : "border border-line bg-card text-muted"
-                }`}
-              >
+              <Chip key={category ?? "all"} active={active} onClick={() => setFilter(category)}>
                 {category === null ? "All" : label(category)}
-              </button>
+              </Chip>
             );
           })}
         </div>
@@ -119,26 +109,24 @@ export function MiniAppList({ apps }: { apps: readonly MiniApp[] }) {
 
       {grouped && filter === null ? (
         categories.map((category) => (
-          <section key={category} className="flex flex-col gap-2.5">
-            <h2 className="px-1 text-sm font-semibold text-muted">{label(category)}</h2>
-            <div className="flex flex-col gap-3">
-              {apps
-                .filter((app) => categoryOf(app) === category)
-                .map((app) => (
-                  <AppRow key={app.id} app={app} />
-                ))}
-            </div>
+          <section key={category} className="flex flex-col">
+            <SectionHeading>{label(category)}</SectionHeading>
+            {apps
+              .filter((app) => categoryOf(app) === category)
+              .map((app) => (
+                <AppRow key={app.id} app={app} />
+              ))}
           </section>
         ))
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col border-t border-hair">
           {shown.map((app) => (
             <AppRow key={app.id} app={app} />
           ))}
         </div>
       )}
 
-      <div className="mt-auto flex items-start gap-3 rounded-2xl bg-surface p-4 text-sm text-muted">
+      <div className="mt-auto flex items-start gap-3 rounded-md border-[1.5px] border-ink px-4 py-3.5 text-sm leading-5">
         <Shield className="mt-px h-5 w-5 shrink-0" />
         <p>
           Apps run inside CrackPay and spend from your one balance. They ask you first every time, and none of them can

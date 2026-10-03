@@ -46,14 +46,14 @@ export default function Developers() {
         A Mini App is a web app that runs inside CrackPay and uses the CrackPay user&apos;s wallet. Install the SDK, and
         your app is connected the moment it loads.
       </p>
-      <pre className="overflow-x-auto rounded-2xl border border-line bg-card p-4 text-xs">
+      <pre className="overflow-x-auto rounded-md border border-hair bg-card p-4 text-xs">
         npm install @crackpay/miniapp-sdk
       </pre>
       <LinkButton href="/developers/submit">Submit a Mini App</LinkButton>
       {sections.map((section) => (
         <section key={section.title} className="flex flex-col gap-1">
           <h2 className="font-semibold">{section.title}</h2>
-          <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card px-4">
+          <div className="flex flex-col divide-y divide-hair rounded-md border border-hair bg-card px-4">
             {section.pages.map((page) => (
               <a key={page.file} href={page.file.startsWith("https://") ? page.file : `/developers/${page.file}`} className="flex flex-col py-3">
                 <span className="font-medium">{page.name}</span>

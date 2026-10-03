@@ -3,12 +3,16 @@
 import { useEffect } from "react";
 import { AMOUNT_KEYS, isAmountKey, pressAmountKey } from "@/lib/amount-input";
 import { Backspace } from "./icons";
+import { Chip } from "./ui";
 
 /**
  * Entering an amount is the one thing this app exists to do, so it gets a
  * purpose-built screen rather than a text field: a figure large enough to read
  * at arm's length and a keypad under the thumb. The value stays a decimal string
  * here — `parseAmount` turns it into base units once, at the edge of the flow.
+ *
+ * The keypad is a ruled grid rather than floating digits: it should read as a
+ * calculator, which is a thing people already know how to use.
  */
 
 /** Shrinks the figure as it grows, so it never wraps or clips. */
@@ -49,41 +53,34 @@ export function AmountPad({
   }, [value, onChange]);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 py-4">
-        <p
-          aria-live="polite"
-          className={`numeric font-semibold leading-none ${sizeFor(shown.length)} ${value ? "" : "text-muted/50"}`}
-        >
-          <span className="align-[0.32em] text-[0.46em] font-medium text-muted">$</span>
+    <div className="-mx-5 flex flex-1 flex-col px-5">
+      <div className="flex flex-1 flex-col items-center justify-center gap-3.5 py-4">
+        <p aria-live="polite" className={`figure ${sizeFor(shown.length)} ${value ? "text-ink" : "text-hair"}`}>
+          <span className="mr-0.5 align-[0.5em] text-[0.46em] font-semibold text-muted">$</span>
           {shown}
         </p>
-        <p className={`min-h-5 text-sm ${problem ? "font-medium text-danger" : "text-muted"}`}>{problem ?? caption}</p>
+        <p className={`min-h-5 text-sm ${problem ? "font-semibold text-danger" : "text-muted"}`}>{problem ?? caption}</p>
       </div>
 
       {chips && chips.length > 0 && (
-        <div className="mb-4 flex justify-center gap-2">
+        <div className="mb-3.5 flex justify-center gap-2">
           {chips.map((chip) => (
-            <button
-              key={chip.label}
-              type="button"
-              onClick={() => onChange(chip.amount)}
-              className="pressable rounded-full bg-surface px-4 py-2 text-sm font-medium"
-            >
+            <Chip key={chip.label} onClick={() => onChange(chip.amount)} className="numeric">
               {chip.label}
-            </button>
+            </Chip>
           ))}
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-x-2 gap-y-1">
+      {/* The 1.5px gaps are the ink showing through: the grid is ruled, not spaced. */}
+      <div className="grid grid-cols-3 gap-[1.5px] overflow-hidden rounded-lg border-[1.5px] border-ink bg-ink">
         {AMOUNT_KEYS.map((key) => (
           <button
             key={key}
             type="button"
             aria-label={key === "del" ? "Delete" : key}
             onClick={() => onChange(pressAmountKey(value, key))}
-            className="pressable flex h-16 items-center justify-center rounded-2xl text-2xl font-medium active:bg-surface"
+            className="pressable numeric flex h-[3.625rem] items-center justify-center bg-card text-2xl font-semibold text-ink active:bg-surface"
           >
             {key === "del" ? <Backspace className="h-6 w-6" /> : key}
           </button>

@@ -5,7 +5,9 @@ import { useRef } from "react";
 /**
  * Six boxes for the SMS code. It is one real input underneath — that is what
  * lets the OS one-time-code autofill and a pasted code both land correctly —
- * with the digits drawn on top of it.
+ * with the digits drawn on top of it. The box waiting for the next digit is
+ * outlined in go green and lifted onto a hard shadow, so the cursor is visible
+ * in daylight without a blinking caret.
  */
 export function CodeInput({
   value,
@@ -20,7 +22,6 @@ export function CodeInput({
 }) {
   const input = useRef<HTMLInputElement>(null);
   const digits = Array.from({ length }, (_, index) => value[index] ?? "");
-  const cursor = Math.min(value.length, length - 1);
 
   return (
     <div className="relative">
@@ -32,19 +33,22 @@ export function CodeInput({
         autoComplete="one-time-code"
         aria-label={`${length}-digit code`}
         autoFocus={autoFocus}
-        className="absolute inset-0 h-full w-full opacity-0"
+        className="absolute inset-0 h-full w-full cursor-text opacity-0"
       />
-      <div aria-hidden className="pointer-events-none flex justify-between gap-2">
-        {digits.map((digit, index) => (
-          <span
-            key={index}
-            className={`numeric flex h-16 flex-1 items-center justify-center rounded-2xl border bg-card text-2xl font-semibold ${
-              index === cursor && value.length < length ? "border-accent" : "border-line"
-            }`}
-          >
-            {digit}
-          </span>
-        ))}
+      <div aria-hidden className="pointer-events-none grid gap-2" style={{ gridTemplateColumns: `repeat(${length}, minmax(0, 1fr))` }}>
+        {digits.map((digit, index) => {
+          const cursor = index === value.length && value.length < length;
+          return (
+            <span
+              key={index}
+              className={`numeric flex h-[3.75rem] items-center justify-center rounded-md border-[1.5px] bg-card text-[1.625rem] font-bold ${
+                cursor ? "border-go shadow-[3px_3px_0_var(--ink)]" : "border-ink"
+              }`}
+            >
+              {digit}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

@@ -27,7 +27,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <form onSubmit={signIn} className="mx-auto mt-16 flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-line bg-card p-6">
+    <form onSubmit={signIn} className="mx-auto mt-16 flex w-full max-w-sm flex-col gap-4 rounded-md border border-hair bg-card p-6">
       <h1 className="text-lg font-semibold">Sign in</h1>
       <Field label="Admin password">
         <input

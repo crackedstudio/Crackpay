@@ -22,7 +22,7 @@ function TestApp({ account, handle }: { account: CrackPaySmartAccount; handle: s
     return (
       <Screen title="Developer mode is off" back="/settings">
         <p className="text-muted">Test apps can only be loaded with Developer mode switched on.</p>
-        <Link href="/settings/developer" className="text-accent">
+        <Link href="/settings/developer" className="text-money">
           Open Developer settings
         </Link>
       </Screen>

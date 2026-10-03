@@ -8,6 +8,9 @@ import { Clock, Gear, Grid, Home } from "./icons";
  * Bottom navigation for the four places a signed-in user lives. Only top-level
  * screens show it; anything inside a flow uses a back arrow instead, so the user
  * is never offered a sideways exit in the middle of a payment.
+ *
+ * The active tab is marked by a go-green bar sitting on the rule, not by a
+ * green icon — green on an icon would read as something to tap for money.
  */
 const tabs = [
   { href: "/", label: "Home", Icon: Home },
@@ -22,7 +25,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
+      className="fixed inset-x-0 bottom-0 z-30 border-t-[1.5px] border-ink bg-card pb-[env(safe-area-inset-bottom)]"
     >
       <ul className="mx-auto flex w-full max-w-[460px]">
         {tabs.map(({ href, label, Icon }) => {
@@ -32,10 +35,11 @@ export function TabBar() {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`pressable flex flex-col items-center gap-1 py-2.5 text-[0.6875rem] font-medium ${
-                  active ? "text-accent" : "text-muted"
+                className={`pressable relative flex flex-col items-center gap-1 pb-2.5 pt-2.5 text-[0.6875rem] ${
+                  active ? "font-bold text-ink" : "font-medium text-muted"
                 }`}
               >
+                {active && <span aria-hidden className="absolute inset-x-[28%] -top-[1.5px] h-1 bg-go" />}
                 <Icon className="h-6 w-6" />
                 {label}
               </Link>

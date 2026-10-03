@@ -43,7 +43,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const signedIn = admin === true && !onLogin;
   return (
     <div className="flex min-h-screen flex-1 flex-col">
-      <header className="border-b border-line bg-card">
+      <header className="border-b border-hair bg-card">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-6 px-5">
           <span className="font-semibold">CrackPay Admin</span>
           {signedIn && (

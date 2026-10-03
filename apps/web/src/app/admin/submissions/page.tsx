@@ -57,13 +57,13 @@ export default function AdminSubmissions() {
       {submissions === null ? (
         <p className="text-sm text-muted">Loading…</p>
       ) : submissions.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-card p-6 text-sm text-muted">No submissions yet.</p>
+        <p className="rounded-md border border-hair bg-card p-6 text-sm text-muted">No submissions yet.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {submissions.map((submission) => {
             const expanded = open === submission.id;
             return (
-              <li key={submission.id} className="rounded-2xl border border-line bg-card p-4 text-sm">
+              <li key={submission.id} className="rounded-md border border-hair bg-card p-4 text-sm">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{submission.listing.name ?? "Untitled"}</p>
@@ -83,12 +83,12 @@ export default function AdminSubmissions() {
                 </div>
 
                 {expanded && (
-                  <div className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
+                  <div className="mt-4 flex flex-col gap-3 border-t border-hair pt-4">
                     <pre className="max-h-96 overflow-auto rounded-lg bg-surface p-3 text-xs">
                       {JSON.stringify(submission.listing, null, 2)}
                     </pre>
                     <textarea
-                      className="min-h-20 rounded-lg border border-line bg-card p-3 outline-none focus:border-foreground"
+                      className="min-h-20 rounded-lg border border-hair bg-card p-3 outline-none focus:border-ink"
                       placeholder="Review notes (kept with the submission)"
                       value={notes}
                       onChange={(event) => setNotes(event.target.value)}
@@ -96,7 +96,7 @@ export default function AdminSubmissions() {
                     <div className="flex flex-wrap gap-2">
                       <Link
                         href={`/admin/apps/new?from=${submission.id}`}
-                        className="inline-flex h-9 items-center rounded-lg bg-foreground px-3 font-medium text-background"
+                        className="inline-flex h-9 items-center rounded-lg bg-ink px-3 font-medium text-paper"
                       >
                         Create a Mini App from this
                       </Link>

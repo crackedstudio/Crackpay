@@ -72,20 +72,20 @@ export function InstallPrompt() {
   if (platform === "other" && !deferred) return null;
 
   return (
-    <div className="relative flex animate-fade flex-col gap-3 rounded-3xl bg-surface p-4">
+    <div className="relative flex animate-fade flex-col gap-3 rounded-lg border-[1.5px] border-dashed border-ink p-4">
       <IconButton label="Dismiss" onClick={dismiss} className="absolute right-1 top-1 h-9 w-9 text-muted">
         <X className="h-4 w-4" />
       </IconButton>
       <div className="flex flex-col gap-1 pr-8">
-        <p className="font-semibold">Keep CrackPay on your home screen</p>
-        <p className="text-sm text-muted">
+        <p className="font-bold">Keep CrackPay on your home screen</p>
+        <p className="text-sm leading-5 text-muted">
           {platform === "ios"
             ? "Tap Share, then “Add to Home Screen”. It opens full screen, like an app."
             : "It opens full screen, works offline and loads instantly."}
         </p>
       </div>
       {platform === "ios" ? (
-        <p className="flex items-center gap-2 text-sm font-medium">
+        <p className="flex items-center gap-2 text-sm font-semibold">
           <Share className="h-5 w-5" />
           Share → Add to Home Screen
         </p>

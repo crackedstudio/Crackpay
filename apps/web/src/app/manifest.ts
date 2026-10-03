@@ -9,8 +9,9 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f7f7f5",
-    theme_color: "#f7f7f5",
+    // The splash is ink with the mark on it; the app itself opens on paper.
+    background_color: "#12100e",
+    theme_color: "#f3f1ec",
     // Long-press the installed icon to go straight to the two things people do.
     shortcuts: [
       { name: "Send money", short_name: "Send", url: "/send" },
@@ -19,7 +20,9 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      // Full-bleed, with the mark inside the safe zone, so Android's mask
+      // cannot clip the crack off.
+      { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

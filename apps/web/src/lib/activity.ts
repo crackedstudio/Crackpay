@@ -33,6 +33,25 @@ type ExplorerTransfer = {
  * logged by the system emitter and will not appear here.
  */
 export async function fetchActivity(account: Address, limit = 25): Promise<ActivityItem[]> {
+  if (process.env.NEXT_PUBLIC_DEMO === "1") {
+    const now = Date.now();
+    const rows: [string, "in" | "out", string, bigint, number][] = [
+      ["1", "in", "amara", 25_000000n, 0.1],
+      ["2", "out", "kofi_m", 4_500000n, 0.4],
+      ["3", "out", "wanjiru", 12_000000n, 1.2],
+      ["4", "in", "tunde", 150_250000n, 1.6],
+      ["5", "out", "sam", 2_500000n, 3.1],
+    ];
+    return rows.slice(0, limit).map(([id, direction, handle, amount, days]) => ({
+      id,
+      direction,
+      counterparty: ("0x" + id.repeat(40)).slice(0, 42) as Address,
+      handle,
+      amount,
+      time: new Date(now - days * 86_400_000),
+      transactionHash: ("0x" + id.repeat(64)).slice(0, 66) as Hash,
+    }));
+  }
   const usdc = contracts[arcChain.id].usdc;
   const url = `${arcChain.blockExplorers.default.apiUrl}/addresses/${account}/token-transfers?type=ERC-20&token=${usdc}`;
   const response = await fetch(url);

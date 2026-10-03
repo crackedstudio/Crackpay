@@ -6,16 +6,17 @@ import { isAddressEqual } from "viem";
 import { AmountPad } from "@/components/AmountPad";
 import { Avatar } from "@/components/Avatar";
 import { RequireAccount } from "@/components/RequireAccount";
-import { Alert, Check, External, Face } from "@/components/icons";
+import { Alert, External, Face, Receipt } from "@/components/icons";
 import {
   Button,
   Callout,
   Card,
   ErrorText,
+  Label,
   LinkButton,
-  ListRow,
   Screen,
   Spinner,
+  Stamp,
   TextField,
 } from "@/components/ui";
 import { ONBOARDING_MODE } from "@/config/onboarding";
@@ -51,6 +52,49 @@ function amountProblem(input: string, balance: bigint | null): string | null {
   if (amount === 0n) return "Enter an amount above zero.";
   if (balance !== null && amount > balance) return `You only have ${dollars(balance)}.`;
   return null;
+}
+
+/** Who a payment is going to, as a chip: the avatar carries the recognition. */
+function RecipientChip({ label }: { label: string }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2.5">
+      <Avatar seed={label} size="sm" />
+      <span className="truncate font-semibold">{label}</span>
+    </span>
+  );
+}
+
+/**
+ * An outcome that is not a success. Left-aligned and stated plainly, because
+ * the first question in every failure is "where is my money" and that belongs
+ * in the heading, not under an icon.
+ */
+function Outcome({
+  tone,
+  title,
+  children,
+  footer,
+}: {
+  tone: "danger" | "warn";
+  title: string;
+  children: React.ReactNode;
+  footer: React.ReactNode;
+}) {
+  return (
+    <Screen footer={footer}>
+      <div className="flex flex-1 flex-col justify-center gap-5.5">
+        <span
+          className={`flex h-16 w-16 items-center justify-center rounded-lg border-2 ${
+            tone === "danger" ? "border-danger bg-danger-soft text-danger" : "border-warn bg-warn-soft text-warn"
+          }`}
+        >
+          <Alert className="h-8 w-8" strokeWidth={2} />
+        </span>
+        <h1 className="ask text-3xl font-extrabold">{title}</h1>
+        {children}
+      </div>
+    </Screen>
+  );
 }
 
 function SendFlow({ account }: { account: CrackPaySmartAccount }) {
@@ -139,7 +183,7 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
       <Screen back="/">
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted">
           <Spinner className="h-6 w-6" />
-          <p className="text-sm">Looking up {linkedTo}…</p>
+          <p className="font-mono text-xs">Looking up {linkedTo}…</p>
         </div>
       </Screen>
     );
@@ -158,6 +202,7 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
       >
         <form id="recipient-form" className="flex flex-1 flex-col gap-6" onSubmit={findRecipient}>
           <TextField
+            tone="question"
             label="Who are you paying?"
             placeholder={ONBOARDING_MODE === "phone" ? "@handle, phone number or address" : "@handle or address"}
             autoCapitalize="none"
@@ -171,9 +216,9 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
           <ErrorText>{error}</ErrorText>
 
           {recents.length > 0 && (
-            <section className="flex flex-col gap-2">
-              <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">Recent</h2>
-              <div className="flex gap-4 overflow-x-auto pb-1">
+            <section className="flex flex-col gap-3">
+              <Label>Recent</Label>
+              <div className="-mx-5 flex gap-3.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {recents.map((recent) => (
                   <button
                     key={recent.address}
@@ -182,7 +227,7 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
                     onClick={() => setStep({ name: "amount", recipient: { address: recent.address, label: recent.label } })}
                     className="pressable flex w-16 shrink-0 flex-col items-center gap-1.5"
                   >
-                    <Avatar seed={recent.label} />
+                    <Avatar seed={recent.label} size="lg" ring />
                     <span className="w-full truncate text-center text-xs text-muted">{recent.label}</span>
                   </button>
                 ))}
@@ -206,12 +251,7 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
     return (
       <Screen
         back={() => setStep({ name: "recipient" })}
-        lead={
-          <span className="flex items-center gap-2.5">
-            <Avatar seed={recipient.label} size="sm" />
-            <span className="truncate font-semibold">{recipient.label}</span>
-          </span>
-        }
+        lead={<RecipientChip label={recipient.label} />}
         footer={
           <Button
             disabled={!amountInput || problem !== null}
@@ -241,30 +281,48 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
         back={sending ? undefined : () => setStep({ name: "amount", recipient })}
         footer={
           <>
-            <Button loading={sending} onClick={() => send(recipient, amount)}>
+            <Button loading={sending} onClick={() => send(recipient, amount)} className="font-bold">
               {sending ? "Sending…" : `Send ${dollars(amount)}`}
             </Button>
-            {!sending && (
-              <p className="flex items-center justify-center gap-2 text-xs text-muted">
-                <Face className="h-4 w-4" />
-                Your phone will ask you to approve this
-              </p>
-            )}
+            <p
+              className={`flex items-center justify-center gap-2 py-1 text-xs text-muted ${
+                sending ? "invisible" : ""
+              }`}
+            >
+              <Face className="h-4 w-4" />
+              Your phone will ask you to approve this
+            </p>
           </>
         }
       >
-        <div className="flex flex-col items-center gap-3 py-8">
-          <Avatar seed={recipient.label} size="lg" />
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="numeric text-[3.25rem] font-semibold leading-none">{dollars(amount)}</span>
-            <span className="text-muted">to {recipient.label}</span>
-          </div>
+        {/* The amount leads, then who it is going to. That order is the whole screen. */}
+        <div className="flex flex-col gap-1.5 pb-4.5 pt-5.5">
+          <Label>You&apos;re sending</Label>
+          <span className="figure text-[3.75rem]">{dollars(amount)}</span>
+          <span className="mt-2.5 flex items-center gap-2.5 text-[1.0625rem]">
+            <Avatar seed={recipient.label} size="sm" />
+            <span>
+              to <span className="font-bold">{recipient.label}</span>
+            </span>
+          </span>
         </div>
 
-        <Card className="divide-y divide-line">
-          <ListRow layout="inline" label="Fee" value="Free" />
-          <ListRow layout="inline" label="Arrives" value="Instantly" />
-          {balance !== null && <ListRow layout="inline" label="Left after this" value={dollars(balance - amount)} />}
+        <Card>
+          <div className="flex items-center px-4 py-3.5">
+            <span className="text-sm text-muted">Fee</span>
+            <span className="ml-auto font-semibold">Free</span>
+          </div>
+          <div className="flex items-center border-t border-hair px-4 py-3.5">
+            <span className="text-sm text-muted">Arrives</span>
+            <span className="ml-auto font-semibold">Instantly</span>
+          </div>
+          {/* The money consequence gets the heaviest weight on the screen. */}
+          {balance !== null && (
+            <div className="flex items-center rounded-b-md border-t-[1.5px] border-ink bg-surface px-4 py-3.5">
+              <span className="text-sm font-semibold">Left after this</span>
+              <span className="numeric ml-auto text-[1.0625rem] font-extrabold">{dollars(balance - amount)}</span>
+            </div>
+          )}
         </Card>
 
         <ErrorText>{error}</ErrorText>
@@ -286,30 +344,29 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
         footer={
           <>
             <LinkButton href="/">Done</LinkButton>
-            <Button variant="ghost" onClick={startOver}>
+            <Button variant="ghost" className="h-12" onClick={startOver}>
               Send another payment
             </Button>
           </>
         }
       >
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <span className="flex h-20 w-20 animate-pop items-center justify-center rounded-full bg-accent text-accent-foreground">
-            <Check className="h-10 w-10" />
-          </span>
-          <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-semibold tracking-tight">Sent</h1>
+        <div className="flex flex-1 flex-col items-center justify-center gap-6.5 text-center">
+          <Stamp />
+          <div className="flex flex-col gap-2">
+            <h1 className="display text-[2.5rem]">Sent</h1>
             <p className="text-lg text-muted">
-              {dollars(amount)} to {recipient.label}
+              <span className="numeric font-bold text-ink">{dollars(amount)}</span> to {recipient.label}
             </p>
           </div>
           <a
-            className="pressable mt-2 flex items-center gap-1.5 rounded-full bg-surface px-4 py-2 text-sm font-medium"
+            className="pressable flex h-10 items-center gap-2 rounded-full border-[1.5px] border-ink bg-card px-4 text-sm font-semibold"
             href={`${explorer}/tx/${result.transactionHash}`}
             target="_blank"
             rel="noreferrer"
           >
+            <Receipt className="h-4 w-4" />
             View receipt
-            <External className="h-4 w-4" />
+            <External className="h-3.5 w-3.5 text-muted" />
           </a>
         </div>
       </Screen>
@@ -318,65 +375,50 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
 
   if (result.status === "reverted") {
     return (
-      <Screen
+      <Outcome
+        tone="danger"
+        title="That payment didn't go through"
         footer={
           <>
             <Button onClick={() => setStep({ name: "review", recipient, amount })}>Try again</Button>
-            <LinkButton href="/" variant="ghost">
+            <LinkButton href="/" variant="ghost" className="h-12">
               Back to my account
             </LinkButton>
           </>
         }
       >
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-danger-soft text-danger">
-            <Alert className="h-10 w-10" />
-          </span>
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold">That payment didn&apos;t go through</h1>
-            <p className="text-muted">
-              Nothing left your balance. You still have {balance === null ? "your money" : dollars(balance)}.
-            </p>
-          </div>
-          <a
-            className="text-sm text-muted underline"
-            href={`${explorer}/tx/${result.transactionHash}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            See what happened
-          </a>
-        </div>
-      </Screen>
+        <p className="text-[1.0625rem] leading-[1.45] text-muted">
+          Nothing left your balance. You still have{" "}
+          <span className="numeric font-bold text-ink">{balance === null ? "your money" : dollars(balance)}</span>.
+        </p>
+        <a className="text-sm text-muted" href={`${explorer}/tx/${result.transactionHash}`} target="_blank" rel="noreferrer">
+          See what happened
+        </a>
+      </Outcome>
     );
   }
 
   return (
-    <Screen
+    <Outcome
+      tone="warn"
+      title="We couldn't confirm this"
       footer={
         <>
           <LinkButton href="/activity">Check my activity</LinkButton>
-          <LinkButton href="/" variant="ghost">
+          <LinkButton href="/" variant="ghost" className="h-12">
             Back to my account
           </LinkButton>
         </>
       }
     >
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-warning-soft text-warning">
-          <Alert className="h-10 w-10" />
-        </span>
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">We couldn&apos;t confirm this</h1>
-          <p className="text-muted">
-            The payment was sent but the network never confirmed it, so we don&apos;t know whether it landed.
-          </p>
-        </div>
-        <Callout tone="info">
-          Check your activity and balance before sending again — otherwise you could pay {recipient.label} twice.
-        </Callout>
-      </div>
-    </Screen>
+      <p className="text-[1.0625rem] leading-[1.45] text-muted">
+        The payment was sent but the network never confirmed it, so we don&apos;t know whether it landed.
+      </p>
+      {/* No retry anywhere on this screen: sending again could pay twice. */}
+      <Callout tone="info">
+        Check your activity and balance before sending again — otherwise you could pay {recipient.label} twice.
+      </Callout>
+    </Outcome>
   );
 }
 

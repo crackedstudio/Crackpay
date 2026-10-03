@@ -23,20 +23,24 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center">
-      <button aria-label="Close" onClick={onClose} className="absolute inset-0 animate-fade bg-foreground/35 backdrop-blur-sm" />
+      <button
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute inset-0 animate-fade bg-[var(--scrim)]"
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 w-full max-w-[460px] animate-rise rounded-t-[1.75rem] border-t border-line bg-card pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lift"
+        className="relative z-10 flex w-full max-w-[460px] animate-rise flex-col gap-4 rounded-t-[0.875rem] border-t-[1.5px] border-ink bg-card px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
       >
-        <div className="flex items-center justify-between px-5 pt-4">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <IconButton label="Close" onClick={onClose} className="-mr-2 text-muted">
+        <div className="flex items-center justify-between pt-3">
+          <h2 className="text-lg font-bold">{title}</h2>
+          <IconButton label="Close" onClick={onClose} className="-mr-2.5 text-muted">
             <X className="h-5 w-5" />
           </IconButton>
         </div>
-        <div className="flex flex-col gap-4 px-5 pt-3">{children}</div>
+        {children}
       </div>
     </div>
   );

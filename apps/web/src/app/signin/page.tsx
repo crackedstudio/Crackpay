@@ -50,19 +50,19 @@ function SignIn() {
           <Button loading={busy} onClick={signIn}>
             {busy ? "Waiting for your passkey…" : "Sign in with passkey"}
           </Button>
-          <LinkButton href="/onboarding" variant="ghost">
+          <LinkButton href="/onboarding" variant="ghost" className="h-12">
             I&apos;m new here
           </LinkButton>
         </>
       }
     >
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+      <div className="flex flex-1 flex-col justify-center gap-5.5">
+        <span className="flex h-16 w-16 items-center justify-center rounded-lg border-[1.5px] border-ink shadow-[3px_3px_0_var(--ink)]">
           <Face className="h-8 w-8" />
         </span>
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">Welcome back</h1>
-          <p className="text-muted">
+        <div className="flex flex-col gap-2.5">
+          <h1 className="ask text-3xl font-extrabold">Welcome back</h1>
+          <p className="text-[1.0625rem] leading-[1.45] text-muted">
             Unlock with the passkey you saved for CrackPay. Your face, fingerprint or screen lock is all it takes.
           </p>
         </div>

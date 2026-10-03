@@ -95,12 +95,12 @@ function OpenUrlSheet({ onClose }: { onClose: () => void }) {
               Clear
             </button>
           </div>
-          <Card className="divide-y divide-line">
+          <Card className="divide-y divide-hair">
             {recent.map((entry) => (
               <ListRow
                 key={entry}
                 layout="inline"
-                label={<span className="truncate text-foreground">{entry.replace(/^https?:\/\//, "")}</span>}
+                label={<span className="truncate text-ink">{entry.replace(/^https?:\/\//, "")}</span>}
                 trailing={<ChevronRight className="h-5 w-5 text-muted" />}
                 onClick={() => openTestApp(entry)}
               />
@@ -126,13 +126,13 @@ function EnvironmentSheet({ account, onClose }: { account: CrackPaySmartAccount;
   ];
   return (
     <Sheet title="Wallet environment" onClose={onClose}>
-      <Card className="divide-y divide-line">
+      <Card className="divide-y divide-hair">
         {rows.map(([label, value]) => (
           <ListRow key={label} layout="inline" label={label} value={<span className="numeric text-sm">{value}</span>} />
         ))}
       </Card>
       <p className="pb-2 text-sm text-muted">
-        Mini Apps built with <span className="font-medium text-foreground">@crackpay/miniapp-sdk</span> trust this origin
+        Mini Apps built with <span className="font-medium text-ink">@crackpay/miniapp-sdk</span> trust this origin
         only if it is in the SDK&apos;s host list.
       </p>
     </Sheet>
@@ -152,7 +152,7 @@ function DeveloperSettings({ account }: { account: CrackPaySmartAccount }) {
             {enabled ? (
               <ListRow
                 layout="inline"
-                label={<span className="text-base font-medium text-foreground">Open URL…</span>}
+                label={<span className="text-base font-medium text-ink">Open URL…</span>}
                 icon={<LinkIcon className="h-5 w-5" />}
                 trailing={<ChevronRight className="h-5 w-5 text-muted" />}
                 onClick={() => setSheet("open")}
@@ -186,7 +186,7 @@ function DeveloperSettings({ account }: { account: CrackPaySmartAccount }) {
         </Card>
 
         <Section title="Debugging">
-          <Card className="divide-y divide-line">
+          <Card className="divide-y divide-hair">
             <SwitchRow
               label="Log Mini App messages"
               description="Every request a Mini App makes, and the answer, in the browser console."
@@ -195,7 +195,7 @@ function DeveloperSettings({ account }: { account: CrackPaySmartAccount }) {
             />
             <ListRow
               layout="inline"
-              label={<span className="text-base font-medium text-foreground">Wallet environment</span>}
+              label={<span className="text-base font-medium text-ink">Wallet environment</span>}
               icon={<Info className="h-5 w-5" />}
               trailing={<ChevronRight className="h-5 w-5 text-muted" />}
               onClick={() => setSheet("environment")}

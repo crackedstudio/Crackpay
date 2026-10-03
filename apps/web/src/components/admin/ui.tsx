@@ -3,11 +3,11 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 // The admin is a desk tool, not the phone wallet: denser controls, wider layout.
 
 export const inputClass =
-  "h-10 w-full rounded-lg border border-line bg-card px-3 text-sm outline-none focus:border-foreground disabled:bg-surface disabled:text-muted";
+  "h-10 w-full rounded-lg border border-hair bg-card px-3 text-sm outline-none focus:border-ink disabled:bg-surface disabled:text-muted";
 
 const buttonTones = {
-  primary: "bg-foreground text-background",
-  secondary: "border border-line bg-card text-foreground",
+  primary: "bg-ink text-paper",
+  secondary: "border border-hair bg-card text-ink",
   danger: "bg-danger-soft text-danger",
 } as const;
 
@@ -35,9 +35,9 @@ export function Field({ label, hint, children }: { label: string; hint?: ReactNo
 }
 
 const pillTones = {
-  on: "bg-accent-soft text-accent",
+  on: "bg-money-soft text-money",
   off: "bg-surface text-muted",
-  warn: "bg-warning-soft text-warning",
+  warn: "bg-warn-soft text-warn",
   bad: "bg-danger-soft text-danger",
 } as const;
 

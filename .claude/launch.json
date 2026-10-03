@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "/Users/0t41k1/Documents/Crackpay/apps/web/node_modules/.bin/next",
+      "runtimeArgs": ["dev"],
+      "cwd": "/Users/0t41k1/Documents/Crackpay/apps/web",
+      "port": 3000
+    }
+  ]
+}

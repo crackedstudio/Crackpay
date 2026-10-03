@@ -8,15 +8,18 @@ import { LinkButton, Screen } from "@/components/ui";
 export default function Activity() {
   return (
     <RequireAccount>
-      {(account) => (
+      {(account, handle) => (
         <>
           <Screen title="Activity" inset>
             <ActivityList
               account={account.address}
               limit={50}
+              grouped
               emptyAction={
-                <LinkButton href="/send" size="md" variant="secondary">
-                  Send your first payment
+                /* A first-timer has nothing to send yet, so the way out of an
+                   empty history is to get paid, not to pay. */
+                <LinkButton href="/receive" size="md" variant="secondary">
+                  Share @{handle}
                 </LinkButton>
               }
             />

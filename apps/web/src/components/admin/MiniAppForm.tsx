@@ -102,7 +102,7 @@ export function MiniAppForm({
     }
   }
 
-  const section = "flex flex-col gap-4 rounded-2xl border border-line bg-card p-5";
+  const section = "flex flex-col gap-4 rounded-md border border-hair bg-card p-5";
   return (
     <form onSubmit={save} className="flex flex-col gap-5">
       <section className={section}>
