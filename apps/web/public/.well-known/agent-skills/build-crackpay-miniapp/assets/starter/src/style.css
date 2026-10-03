@@ -1,0 +1,113 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f7f7f5;
+  --card: #ffffff;
+  --text: #14110f;
+  --muted: #6b6560;
+  --line: #e6e3df;
+  --accent: #047857;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0a09;
+    --card: #1a1816;
+    --text: #f5f4f2;
+    --muted: #a8a29e;
+    --line: #2a2725;
+    --accent: #34d399;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* One column, sized for a phone. CrackPay never shows a Mini App wider than this. */
+main,
+.center {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.center {
+  min-height: 100vh;
+  justify-content: center;
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.mono {
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+}
+
+.balance {
+  font-size: 2.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+input,
+button {
+  font: inherit;
+  min-height: 48px;
+  border-radius: 12px;
+}
+
+input {
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+}
+
+button {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+button:disabled {
+  opacity: 0.4;
+}
+
+a {
+  color: var(--accent);
+}
+
+p {
+  margin: 0;
+}

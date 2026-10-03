@@ -1,9 +1,11 @@
 {
   "name": "crackpay",
-  "owner": { "name": "Cracked Studios" },
+  "owner": {
+    "name": "Cracked Studios"
+  },
   "metadata": {
     "description": "Skills for building Mini Apps that run inside CrackPay, the USD stablecoin wallet on Arc.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {

@@ -4,6 +4,7 @@ import { contracts } from "../../config/contracts";
 import { arcChain } from "../arc";
 import { UNLOCK_TAPS } from "../developer";
 import { LISTING_CATEGORIES, LISTING_TEMPLATE } from "./listing";
+import { buildSkillsIndex } from "./skills-index";
 
 // The developer skills in /skills describe this wallet. These checks fail when
 // the wallet changes and the skills would start teaching something untrue.
@@ -67,5 +68,22 @@ describe("developer skills", () => {
     expect(forwarded.length).toBeGreaterThan(10);
     const api = read(`${skillsDir}/use-crackpay-sdk/references/api.md`);
     for (const method of forwarded) expect(api, method).toContain(`\`${method}\``);
+  });
+
+  it("publish discovery files that match the skills (run `pnpm build:skills` if this fails)", () => {
+    for (const [path, content] of buildSkillsIndex()) {
+      expect(read(`../../${path}`), path).toBe(content);
+    }
+  });
+
+  it("list every skill and its SKILL.md in the well-known index", () => {
+    const index = JSON.parse(read("public/.well-known/agent-skills/index.json")) as {
+      skills: { name: string; files: string[] }[];
+    };
+    expect(index.skills.map((skill) => skill.name).sort()).toEqual([...names].sort());
+    for (const skill of index.skills) {
+      expect(skill.files[0]).toBe("SKILL.md");
+      expect(skill.name).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+    }
   });
 });

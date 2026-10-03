@@ -67,4 +67,12 @@ Arc differs from other EVM chains in ways that matter for payments. Read
 2. [Test in CrackPay](./test-in-crackpay.md): load it with Developer mode.
 3. [Get listed](./listing.md): what CrackPay needs to approve it.
 
-Building with an AI coding assistant? Give it [SKILL.md](./SKILL.md).
+Building with an AI coding assistant? Install the CrackPay skills:
+
+```bash
+npx skills add crackedstudio/crackpay-skills
+```
+
+In Claude Code: `/plugin marketplace add crackedstudio/crackpay-skills`, then
+`/plugin install crackpay-skills@crackpay`. Or give it the single-file
+[SKILL.md](./SKILL.md).

@@ -1,0 +1,78 @@
+{
+  "name": "crackpay",
+  "version": "0.2.0",
+  "description": "Build, test and list Mini Apps for CrackPay with the @crackpay/miniapp-sdk: wallet connection, USDC payments on Arc, Developer mode and listing.",
+  "homepage": "https://crackpay.vercel.app/developers",
+  "repository": "https://github.com/crackedstudio/crackpay-skills",
+  "install": {
+    "claude-code": [
+      "/plugin marketplace add crackedstudio/crackpay-skills",
+      "/plugin install crackpay-skills@crackpay"
+    ],
+    "skills-cli": "npx skills add crackedstudio/crackpay-skills",
+    "skills-cli-from-website": "npx skills add https://crackpay.vercel.app"
+  },
+  "skills": [
+    {
+      "name": "build-crackpay-miniapp",
+      "description": "Start here to build a Mini App for CrackPay, the USD stablecoin wallet on Arc (Circle's L1 where USDC is the gas token). Scaffolds a working Mini App from a starter template, explains how a Mini App talks to the wallet, and routes to the other CrackPay skills. Use when the user wants to create, scaffold, start or plan a CrackPay Mini App, or asks what a CrackPay Mini App is or how to build on CrackPay. Triggers on CrackPay, CrackPay Mini App, build on CrackPay, Mini App on Arc, crackpay starter, scaffold mini app.",
+      "path": "plugins/crackpay/skills/build-crackpay-miniapp/SKILL.md",
+      "files": [
+        "plugins/crackpay/skills/build-crackpay-miniapp/SKILL.md",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/gitignore.txt",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/index.html",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/package.json",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/src/App.tsx",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/src/crackpay.ts",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/src/main.tsx",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/src/style.css",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/src/vite-env.d.ts",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/tsconfig.json",
+        "plugins/crackpay/skills/build-crackpay-miniapp/assets/starter/vite.config.ts"
+      ]
+    },
+    {
+      "name": "list-crackpay-miniapp",
+      "description": "Prepare a CrackPay Mini App for listing and write its listing file. Covers who lists apps (CrackPay's admins), the crackpay-listing.json format and its validation rules, listing requirements for the app and its contracts, where to submit, and what happens after. Use when the user wants to publish, list, submit or launch a CrackPay Mini App, get it onto the CrackPay Apps page, whitelist its URL or contracts, or asks about CrackPay listing requirements or review.",
+      "path": "plugins/crackpay/skills/list-crackpay-miniapp/SKILL.md",
+      "files": [
+        "plugins/crackpay/skills/list-crackpay-miniapp/SKILL.md",
+        "plugins/crackpay/skills/list-crackpay-miniapp/references/listing-template.json"
+      ]
+    },
+    {
+      "name": "port-minipay-to-crackpay",
+      "description": "Port an existing MiniPay Mini App, or another EVM dApp, to run inside CrackPay on Arc. Maps MiniPay concepts to CrackPay (provider detection, chain, fee currency, stablecoins, custom methods, signing), lists what has no equivalent, and gives a step-by-step migration that can keep the app working in both wallets. Use when the user has a MiniPay or Celo Mini App, mentions isMiniPay, feeCurrency, USDm or minipay_ methods, or wants one codebase to support both MiniPay and CrackPay.",
+      "path": "plugins/crackpay/skills/port-minipay-to-crackpay/SKILL.md",
+      "files": [
+        "plugins/crackpay/skills/port-minipay-to-crackpay/SKILL.md"
+      ]
+    },
+    {
+      "name": "send-crackpay-transactions",
+      "description": "Send transactions, read USDC balances and handle errors correctly from a CrackPay Mini App on Arc. Covers Arc's two USDC decimal scales (6 as a token, 18 as a native value), sponsored gas, paying a contract, the approve-then-call token flow, what a listed app may call, receipts under account abstraction, error codes, and contract requirements for smart accounts. Use when writing payment, balance, contract-call or error-handling code for a CrackPay Mini App, or when amounts look wrong by a factor of 10^12, a call is rejected with 4100, or a transaction fails inside CrackPay.",
+      "path": "plugins/crackpay/skills/send-crackpay-transactions/SKILL.md",
+      "files": [
+        "plugins/crackpay/skills/send-crackpay-transactions/SKILL.md"
+      ]
+    },
+    {
+      "name": "test-crackpay-miniapp",
+      "description": "Test and debug a Mini App inside CrackPay using Developer mode. Covers turning Developer mode on, loading a test page, which URLs work (deployments, domains, ngrok or Cloudflare tunnels, HTTPS on the local network), framing headers, and a troubleshooting guide for a blank frame, a provider that resolves to null, and rejected transactions. Use when the user wants to run, try, preview, test or debug a CrackPay Mini App, asks why it is blank or not connecting inside CrackPay, or mentions CrackPay Developer mode, Load test page, or ngrok with CrackPay.",
+      "path": "plugins/crackpay/skills/test-crackpay-miniapp/SKILL.md",
+      "files": [
+        "plugins/crackpay/skills/test-crackpay-miniapp/SKILL.md"
+      ]
+    },
+    {
+      "name": "use-crackpay-sdk",
+      "description": "Use the @crackpay/miniapp-sdk npm package to connect a web app to the CrackPay wallet. Covers installing it, getCrackPayProvider, connectCrackPay (viem), useCrackPay (React), wagmi setup, the script-tag build, detecting CrackPay, server rendering, and the smart-account caveats. Use when writing or fixing wallet connection code for a CrackPay Mini App, or when the user mentions @crackpay/miniapp-sdk, getCrackPayProvider, connectCrackPay, useCrackPay, isCrackPay, window.crackpay or miniapp-sdk.js.",
+      "path": "plugins/crackpay/skills/use-crackpay-sdk/SKILL.md",
+      "files": [
+        "plugins/crackpay/skills/use-crackpay-sdk/SKILL.md",
+        "plugins/crackpay/skills/use-crackpay-sdk/references/api.md",
+        "plugins/crackpay/skills/use-crackpay-sdk/references/wagmi.md"
+      ]
+    }
+  ]
+}

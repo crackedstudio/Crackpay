@@ -1,0 +1,26 @@
+{
+  "name": "crackpay",
+  "version": "0.2.0",
+  "description": "Build, test and list Mini Apps for CrackPay with the @crackpay/miniapp-sdk: wallet connection, USDC payments on Arc, Developer mode and listing.",
+  "author": { "name": "Cracked Studios" },
+  "homepage": "https://crackpay.vercel.app/developers",
+  "repository": "https://github.com/crackedstudio/crackpay-skills",
+  "license": "MIT",
+  "keywords": ["crackpay", "arc", "usdc", "stablecoin", "mini-app", "wallet", "payments"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "CrackPay",
+    "shortDescription": "Build Mini Apps for CrackPay",
+    "longDescription": "Scaffold, connect, test and list Mini Apps that run inside CrackPay, the USD stablecoin wallet on Arc, using @crackpay/miniapp-sdk.",
+    "developerName": "Cracked Studios",
+    "category": "Engineering",
+    "capabilities": ["Interactive", "Read"],
+    "websiteURL": "https://crackpay.vercel.app/developers",
+    "defaultPrompt": [
+      "Create a CrackPay Mini App",
+      "Connect my app to the CrackPay wallet",
+      "Port my MiniPay app to CrackPay",
+      "Why is my Mini App blank in CrackPay?"
+    ]
+  }
+}

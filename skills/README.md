@@ -20,11 +20,27 @@ Documentation for people: <https://crackpay.vercel.app/developers>
 /plugin install crackpay-skills@crackpay
 ```
 
-### Other assistants (Cursor, Codex, Copilot, …)
+### Other assistants (Cursor, Codex, Copilot, Windsurf, …)
 
 ```bash
 npx skills add crackedstudio/crackpay-skills
 ```
+
+Or straight from the CrackPay website, with no GitHub access needed:
+
+```bash
+npx skills add https://crackpay.vercel.app
+```
+
+### For agents and tools
+
+| File | What it is |
+|---|---|
+| `manifest.json` | A plain catalogue of every skill and its files |
+| `.claude-plugin/marketplace.json` | Claude Code plugin marketplace |
+| `.cursor-plugin/marketplace.json` | Cursor plugin marketplace |
+| `.agents/plugins/marketplace.json` | Codex plugin marketplace |
+| `https://crackpay.vercel.app/.well-known/agent-skills/index.json` | [Agent Skills](https://agentskills.io) well-known index (also at `/.well-known/skills/index.json`) |
 
 ## Skills
 

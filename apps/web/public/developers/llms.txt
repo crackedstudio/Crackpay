@@ -4,6 +4,8 @@
 
 AI coding assistants: read [SKILL.md](/developers/SKILL.md) first. It has every rule and code pattern in one file.
 
+Installable skills: [/.well-known/agent-skills/index.json](/.well-known/agent-skills/index.json) (`npx skills add https://crackpay.vercel.app`), or the repository https://github.com/crackedstudio/crackpay-skills.
+
 ## Getting started
 
 - [Overview](/developers/overview.md): What a Mini App is, how it talks to the wallet, network details.

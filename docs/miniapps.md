@@ -102,8 +102,15 @@ Vite + React starter under `build-crackpay-miniapp/assets/starter`.
 
 Developers need it in a **public** repository to install it
 (`npx skills add <owner>/<repo>` or `/plugin marketplace add <owner>/<repo>`).
-This monorepo is private, so publish by copying `skills/` to the root of a public
-repository. The README assumes `crackedstudio/crackpay-skills`.
+This monorepo is private; the public copy is `crackedstudio/crackpay-skills`. Edit
+the skills here, run `pnpm build:skills` in `apps/web` (regenerates
+`skills/manifest.json` and the website's `/.well-known/agent-skills/`), then copy
+`skills/` over the public repository's contents and push.
+
+Discovery files, so every kind of agent can find them: Claude Code
+(`.claude-plugin`), Cursor (`.cursor-plugin`), Codex (`.agents/plugins` and
+`.codex-plugin`), a plain `manifest.json`, and the Agent Skills well-known index
+on the website.
 
 `apps/web/src/lib/miniapp/skills.test.ts` fails when the skills drift from the
 wallet: addresses, chain ID, Developer mode steps, listing template, forwarded

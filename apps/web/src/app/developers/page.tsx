@@ -29,6 +29,11 @@ const sections = [
     pages: [
       { file: "reference.md", name: "Reference", about: "Supported methods, events, error codes, limits." },
       { file: "SKILL.md", name: "SKILL.md", about: "The whole guide in one file, for AI coding assistants." },
+      {
+        file: "https://github.com/crackedstudio/crackpay-skills",
+        name: "CrackPay skills",
+        about: "Installable skills for Claude Code, Cursor, Codex and others: npx skills add crackedstudio/crackpay-skills",
+      },
       { file: "llms.txt", name: "llms.txt", about: "Index of these pages for tools." },
     ],
   },
@@ -50,7 +55,7 @@ export default function Developers() {
           <h2 className="font-semibold">{section.title}</h2>
           <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-card px-4">
             {section.pages.map((page) => (
-              <a key={page.file} href={`/developers/${page.file}`} className="flex flex-col py-3">
+              <a key={page.file} href={page.file.startsWith("https://") ? page.file : `/developers/${page.file}`} className="flex flex-col py-3">
                 <span className="font-medium">{page.name}</span>
                 <span className="text-sm text-muted">{page.about}</span>
               </a>
