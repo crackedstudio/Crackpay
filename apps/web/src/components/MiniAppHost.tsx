@@ -6,6 +6,7 @@ import { Sheet } from "@/components/Sheet";
 import { Alert, ArrowLeft, Face } from "@/components/icons";
 import { Button, Callout, EmptyState, LinkButton, Screen, Spinner } from "@/components/ui";
 import { arcChain, publicClient } from "@/lib/arc";
+import { developer } from "@/lib/developer";
 import { handleRequest, toWireError } from "@/lib/miniapp/bridge";
 import { RpcError } from "@/lib/miniapp/errors";
 import { checkTransaction, type TransactionSummary } from "@/lib/miniapp/policy";
@@ -125,12 +126,18 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
       if (message.type === "hello") {
         reply(envelope({ type: "ready", chainId: `0x${arcChain.id.toString(16)}`, accounts: [account.address] }));
       } else if (message.type === "request") {
+        // Developer settings → Log Mini App messages.
+        const log = developer.isLoggingMessages();
+        if (log) console.info(`[Mini App ${app.id}] → ${message.method}`, message.params ?? []);
         try {
           const result = await handleRequest(deps, message.method, message.params);
+          if (log) console.info(`[Mini App ${app.id}] ← ${message.method}`, result);
           reply(envelope({ type: "response", id: message.id, result }));
         } catch (error) {
           console.error(`Mini App ${app.id}: ${message.method} failed`, error);
-          reply(envelope({ type: "response", id: message.id, error: toWireError(error) }));
+          const wire = toWireError(error);
+          if (log) console.info(`[Mini App ${app.id}] ← ${message.method} error ${wire.code}`, wire.message);
+          reply(envelope({ type: "response", id: message.id, error: wire }));
         }
       }
     }

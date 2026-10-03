@@ -42,16 +42,18 @@ function About() {
           value={!unlocked && taps >= 3 ? `${remaining} more to unlock developer settings` : packageInfo.version}
           onClick={tap}
         />
-        {unlocked && (
+      </Card>
+      {unlocked && (
+        <Card className="mt-3">
           <ListRow
-            label="Developer settings"
-            value="Load a Mini App from a URL"
+            layout="inline"
+            label={<span className="text-base font-medium text-foreground">Developer settings</span>}
             icon={<Code className="h-5 w-5" />}
             href="/settings/developer"
             trailing={<ChevronRight className="h-5 w-5 text-muted" />}
           />
-        )}
-      </Card>
+        </Card>
+      )}
     </section>
   );
 }

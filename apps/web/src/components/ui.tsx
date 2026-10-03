@@ -235,6 +235,50 @@ export function ListRow({
   return <div className={className}>{body}</div>;
 }
 
+/**
+ * A row with an on/off switch, in the style of a phone's settings screen.
+ * `disabled` shows the state but will not change it.
+ */
+export function SwitchRow({
+  label,
+  description,
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  label: ReactNode;
+  description?: ReactNode;
+  checked: boolean;
+  onChange?: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange?.(!checked)}
+      className="pressable flex w-full items-center gap-3 px-4 py-4 text-left disabled:pointer-events-none"
+    >
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="font-medium">{label}</span>
+        {description && <span className="text-sm text-muted">{description}</span>}
+      </span>
+      <span
+        aria-hidden
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? "bg-accent" : "border border-line bg-surface"} ${
+          disabled ? "opacity-50" : ""
+        }`}
+      >
+        <span
+          className={`absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-white shadow-card transition-all ${checked ? "left-6" : "left-1"}`}
+        />
+      </span>
+    </button>
+  );
+}
+
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div aria-hidden className={`animate-shimmer rounded-full bg-surface ${className}`} />;
 }
