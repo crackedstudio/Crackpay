@@ -17,13 +17,14 @@ npm install @crackpay/miniapp-sdk
 | `ErrorCode` | Named error codes. See below. |
 | `errorCode(error)` | The numeric code of an error, even when wrapped by viem or wagmi. |
 | `isUserRejection(error)` | `true` when the user cancelled. |
+| `getCrackPayUser(provider)` | The user's `{ account, handle }`. `handle` is their CrackPay handle without the "@", or `null`. Never prompts. Since 0.2.0. |
 
 Options: `hostOrigins` (CrackPay hosts to accept) and `timeoutMs` (default `3000`).
 
 | Entry point | Export | Needs |
 |---|---|---|
-| `@crackpay/miniapp-sdk/viem` | `connectCrackPay(options?)` → `{ provider, account, walletClient, publicClient }` or `null` | `viem` |
-| `@crackpay/miniapp-sdk/react` | `useCrackPay(options?)` → `{ status, provider?, account?, error? }` | `react` |
+| `@crackpay/miniapp-sdk/viem` | `connectCrackPay(options?)` → `{ provider, account, handle, walletClient, publicClient }` or `null` | `viem` |
+| `@crackpay/miniapp-sdk/react` | `useCrackPay(options?)` → `{ status, provider?, account?, handle?, error? }` | `react` |
 
 ## `window.crackpay` (script tag)
 
@@ -58,6 +59,7 @@ Announced through EIP-6963 with `name: "CrackPay"` and `rdns: "app.crackpay"`.
 | `wallet_switchEthereumChain` | `null` for Arc. Error `4902` for any other chain. |
 | `wallet_addEthereumChain` | `null` for Arc. Error `4200` for any other chain. |
 | `eth_sendTransaction` | The transaction hash, once final. See [Transactions](./transactions.md). |
+| `crackpay_getProfile` | `{ account, handle }`: the user's CrackPay handle without the "@", or `null`. Never prompts. |
 
 ### Read-only, forwarded to an Arc node
 

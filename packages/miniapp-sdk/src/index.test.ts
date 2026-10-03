@@ -63,7 +63,12 @@ describe("inside CrackPay", () => {
           });
         if (message.type === "hello") reply({ type: "ready", chainId: "0x4cef52", accounts: [ACCOUNT] });
         if (message.type === "request") {
-          const result = message.method === "eth_requestAccounts" ? [ACCOUNT] : message.method === "eth_chainId" ? "0x4cef52" : null;
+          const results: Record<string, unknown> = {
+            eth_requestAccounts: [ACCOUNT],
+            eth_chainId: "0x4cef52",
+            crackpay_getProfile: { account: ACCOUNT, handle: "alice" },
+          };
+          const result = results[message.method ?? ""] ?? null;
           reply({ type: "response", id: message.id, result });
         }
       },
@@ -85,9 +90,20 @@ describe("inside CrackPay", () => {
 
     const connection = await connectCrackPay();
     expect(connection?.account).toBe(ACCOUNT);
+    expect(connection?.handle).toBe("alice");
     expect(connection?.provider.isCrackPay).toBe(true);
     expect(connection?.walletClient.chain?.id).toBe(5042002);
     expect(window.ethereum).toBe(connection?.provider);
+  });
+
+  it("reports the user's handle, and null when they have none", async () => {
+    frame(HOST);
+    const { getCrackPayProvider: connect, getCrackPayUser } = await import("./index.js");
+    const provider = await connect();
+    expect(provider && (await getCrackPayUser(provider))).toEqual({ account: ACCOUNT, handle: "alice" });
+
+    const noHandle = { isCrackPay: true, request: async () => ({ account: ACCOUNT, handle: "" }), on() {}, removeListener() {} } as const;
+    expect(await getCrackPayUser(noHandle)).toEqual({ account: ACCOUNT, handle: null });
   });
 
   it("ignores a host that is not on the trusted list", async () => {

@@ -12,7 +12,7 @@ import type { CrackPaySmartAccount } from "@/lib/wallet";
 
 const subscribe = () => () => {};
 
-function TestApp({ account }: { account: CrackPaySmartAccount }) {
+function TestApp({ account, handle }: { account: CrackPaySmartAccount; handle: string }) {
   const url = useSearchParams().get("url") ?? "";
   // False on the server and during hydration, then the stored setting.
   const enabled = useSyncExternalStore(subscribe, developer.isEnabled, () => false);
@@ -35,16 +35,16 @@ function TestApp({ account }: { account: CrackPaySmartAccount }) {
       </Screen>
     );
   }
-  return <MiniAppHost app={app} account={account} />;
+  return <MiniAppHost app={app} account={account} handle={handle} />;
 }
 
 export default function TestAppPage() {
   return (
     <RequireAccount>
-      {(account) => (
+      {(account, handle) => (
         // useSearchParams needs a Suspense boundary to prerender.
         <Suspense>
-          <TestApp account={account} />
+          <TestApp account={account} handle={handle} />
         </Suspense>
       )}
     </RequireAccount>

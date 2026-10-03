@@ -56,6 +56,21 @@ const [account] = await provider.request({ method: "eth_requestAccounts" });
 This never prompts. `eth_accounts` returns the same single account. The account
 does not change during a session.
 
+## The user's handle
+
+Every CrackPay user has a handle, like `@sam`. Your app gets it with no prompt:
+
+```ts
+import { getCrackPayUser } from "@crackpay/miniapp-sdk";
+
+const { account, handle } = await getCrackPayUser(provider);
+greet(handle ? `Hi @${handle}` : "Hi there");
+```
+
+`connectCrackPay()` and `useCrackPay()` include `handle` too. It is public
+information, so showing it is fine; still identify users by `account`. It can be
+`null`. Needs SDK 0.2.0 or later.
+
 ## With viem
 
 ```ts
@@ -63,7 +78,7 @@ import { connectCrackPay } from "@crackpay/miniapp-sdk/viem";
 
 const crackpay = await connectCrackPay();
 if (crackpay) {
-  const { account, walletClient, publicClient } = crackpay;
+  const { account, handle, walletClient, publicClient } = crackpay;
 }
 ```
 
@@ -74,7 +89,7 @@ import { useCrackPay } from "@crackpay/miniapp-sdk/react";
 
 const crackpay = useCrackPay();
 // crackpay.status: "connecting" | "connected" | "unavailable" | "error"
-// when connected: crackpay.account and crackpay.provider
+// when connected: crackpay.account, crackpay.handle and crackpay.provider
 ```
 
 ## With wagmi

@@ -9,12 +9,14 @@ import {
   type WalletClient,
 } from "viem";
 import { arcTestnet } from "viem/chains";
-import { getCrackPayProvider, type CrackPayOptions, type MiniAppProvider } from "./index.js";
+import { getCrackPayProvider, getCrackPayUser, type CrackPayOptions, type MiniAppProvider } from "./index.js";
 
 export type CrackPayConnection = {
   provider: MiniAppProvider;
   /** The user's CrackPay account. A smart account: it cannot sign messages. */
   account: Address;
+  /** Their CrackPay handle without the "@", or null if they have none. */
+  handle: string | null;
   /** Sends transactions through CrackPay. Each one is confirmed by the user and gas is sponsored. */
   walletClient: WalletClient;
   /** Reads from Arc directly. */
@@ -31,8 +33,7 @@ export async function connectCrackPay(options: CrackPayOptions & { rpcUrl?: stri
 
   const walletClient = createWalletClient({ chain: arcTestnet, transport: custom(provider as unknown as EIP1193Provider) });
   const publicClient = createPublicClient({ chain: arcTestnet, transport: http(options.rpcUrl) });
-  const [account] = await walletClient.requestAddresses();
-  if (!account) throw new Error("CrackPay returned no account");
+  const { account, handle } = await getCrackPayUser(provider);
 
-  return { provider, account, walletClient, publicClient };
+  return { provider, account, handle, walletClient, publicClient };
 }

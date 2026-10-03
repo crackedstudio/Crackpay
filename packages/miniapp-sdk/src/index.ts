@@ -88,3 +88,20 @@ export function errorCode(error: unknown): number | undefined {
 export function isUserRejection(error: unknown): boolean {
   return errorCode(error) === ErrorCode.UserRejected;
 }
+
+/** Who the user is in CrackPay. */
+export type CrackPayUser = {
+  account: `0x${string}`;
+  /** Their CrackPay handle without the "@", or null if they have none. Public on-chain. */
+  handle: string | null;
+};
+
+/**
+ * The user's CrackPay account and handle. Never prompts. Use the handle to greet
+ * them or to show who they are paying as; the account is still their identity.
+ */
+export async function getCrackPayUser(provider: MiniAppProvider): Promise<CrackPayUser> {
+  const result = (await provider.request({ method: "crackpay_getProfile" })) as Partial<CrackPayUser> | null;
+  if (!result || typeof result.account !== "string") throw new Error("CrackPay returned no account");
+  return { account: result.account, handle: typeof result.handle === "string" && result.handle ? result.handle : null };
+}

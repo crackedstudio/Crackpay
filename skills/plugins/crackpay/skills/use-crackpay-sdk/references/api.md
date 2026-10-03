@@ -1,6 +1,6 @@
 # @crackpay/miniapp-sdk API
 
-Version 0.1.0.
+Version 0.2.0.
 
 ## `@crackpay/miniapp-sdk`
 
@@ -15,6 +15,7 @@ Version 0.1.0.
 | `ErrorCode` | object | `UserRejected` 4001, `Unauthorized` 4100, `UnsupportedMethod` 4200, `UnrecognizedChain` 4902, `InvalidParams` -32602, `Internal` -32603 |
 | `errorCode(error)` | `number \| undefined` | The code of an error, looking through one level of `cause` (viem and wagmi wrap errors). |
 | `isUserRejection(error)` | `boolean` | True when the user cancelled. |
+| `getCrackPayUser(provider)` | `Promise<CrackPayUser>` | The user's `{ account, handle }`. `handle` is their CrackPay handle without the "@", or `null`. Never prompts. |
 | `ProviderRpcError` | class | What `provider.request` rejects with. Has a numeric `code`. |
 | `WALLET_INFO` | object | `{ name: "CrackPay", icon, rdns: "app.crackpay" }` |
 | `PROTOCOL_VERSION` | `1` | |
@@ -45,6 +46,7 @@ To hand it to viem: `custom(provider as unknown as EIP1193Provider)`.
 type CrackPayConnection = {
   provider: MiniAppProvider;
   account: Address;
+  handle: string | null; // CrackPay handle without the "@"
   walletClient: WalletClient; // chain: arcTestnet, transport: the CrackPay provider
   publicClient: PublicClient; // chain: arcTestnet, transport: http(rpcUrl)
 };
@@ -60,7 +62,7 @@ When calling `walletClient.writeContract` or `sendTransaction`, pass
 ```ts
 type CrackPayState =
   | { status: "connecting" }
-  | { status: "connected"; provider: MiniAppProvider; account: `0x${string}` }
+  | { status: "connected"; provider: MiniAppProvider; account: `0x${string}`; handle: string | null }
   | { status: "unavailable" } // not inside CrackPay
   | { status: "error"; error: unknown };
 ```
@@ -75,6 +77,7 @@ type CrackPayState =
 | `wallet_switchEthereumChain` | `null` for Arc; error 4902 otherwise |
 | `wallet_addEthereumChain` | `null` for Arc; error 4200 otherwise |
 | `eth_sendTransaction` | The transaction hash, once final |
+| `crackpay_getProfile` | `{ account, handle }`. `handle` is the CrackPay handle without the "@", or `null`. Never prompts. Use `getCrackPayUser`. |
 
 Forwarded to an Arc node: `eth_blockNumber`, `eth_call`, `eth_estimateGas`,
 `eth_feeHistory`, `eth_gasPrice`, `eth_getBalance`, `eth_getBlockByHash`,

@@ -20,6 +20,7 @@ function makeDeps(overrides: Partial<BridgeDeps> = {}): BridgeDeps {
   return {
     chainId: CHAIN_ID,
     account: ACCOUNT,
+    handle: "alice",
     check: (tx) => ({ kind: "contract", to: tx.to, value: tx.value }),
     confirm: async () => true,
     send: async () => ({ transactionHash: TX_HASH, success: true }),
@@ -45,6 +46,13 @@ describe("handleRequest", () => {
     expect(await handleRequest(deps, "net_version", undefined)).toBe("5042002");
     expect(await handleRequest(deps, "eth_accounts", undefined)).toEqual([ACCOUNT]);
     expect(await handleRequest(deps, "eth_requestAccounts", undefined)).toEqual([ACCOUNT]);
+    expect(deps.confirm).not.toHaveBeenCalled();
+  });
+
+  it("tells the app the user's account and CrackPay handle without prompting", async () => {
+    const deps = makeDeps({ confirm: vi.fn() });
+    expect(await handleRequest(deps, "crackpay_getProfile", undefined)).toEqual({ account: ACCOUNT, handle: "alice" });
+    expect(await handleRequest(makeDeps({ handle: null }), "crackpay_getProfile", [])).toEqual({ account: ACCOUNT, handle: null });
     expect(deps.confirm).not.toHaveBeenCalled();
   });
 

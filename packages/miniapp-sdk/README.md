@@ -43,7 +43,8 @@ import { erc20Abi, formatUnits, parseEther } from "viem";
 
 const crackpay = await connectCrackPay();
 if (!crackpay) throw new Error("Open this app in CrackPay.");
-const { account, walletClient, publicClient } = crackpay;
+const { account, handle, walletClient, publicClient } = crackpay;
+console.log(handle ? `Hi @${handle}` : "Hi there");
 
 const balance = await publicClient.readContract({
   address: tokens.USDC.address,
@@ -75,7 +76,7 @@ function App() {
   if (crackpay.status === "connecting") return <p>Loading…</p>;
   if (crackpay.status === "unavailable") return <p>Open this app from CrackPay.</p>;
   if (crackpay.status === "error") return <p>Something went wrong.</p>;
-  return <p>Connected as {crackpay.account}</p>;
+  return <p>Hi {crackpay.handle ? `@${crackpay.handle}` : crackpay.account}</p>;
 }
 ```
 

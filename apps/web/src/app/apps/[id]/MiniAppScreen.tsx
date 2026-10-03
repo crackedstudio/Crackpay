@@ -35,5 +35,7 @@ export function MiniAppScreen({ id }: { id: string }) {
   }
 
   const { app } = lookup;
-  return <RequireAccount>{(account) => <MiniAppHost app={app} account={account} />}</RequireAccount>;
+  return (
+    <RequireAccount>{(account, handle) => <MiniAppHost app={app} account={account} handle={handle} />}</RequireAccount>
+  );
 }

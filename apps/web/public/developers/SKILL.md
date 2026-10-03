@@ -94,7 +94,7 @@ const crackpay = await connectCrackPay();
 if (!crackpay) {
   // Not inside CrackPay: show "Open this app in CrackPay".
 } else {
-  const { account, walletClient, publicClient, provider } = crackpay;
+  const { account, handle, walletClient, publicClient, provider } = crackpay;
 }
 ```
 
@@ -108,9 +108,14 @@ function App() {
   if (crackpay.status === "connecting") return <Loading />;
   if (crackpay.status === "unavailable") return <p>Open this app from CrackPay.</p>;
   if (crackpay.status === "error") return <p>Something went wrong.</p>;
-  return <Main account={crackpay.account} provider={crackpay.provider} />;
+  return <Main account={crackpay.account} handle={crackpay.handle} provider={crackpay.provider} />;
 }
 ```
+
+`handle` is the user's CrackPay handle without the "@" (or `null`); use it to
+greet them or show who paid, and identify users by `account`. For the raw
+provider, `getCrackPayUser(provider)` returns `{ account, handle }`. Needs SDK
+0.2.0 or later.
 
 `useCrackPay` takes the same options as `getCrackPayProvider`; pass a stable
 object (module-level or memoised) or nothing.

@@ -19,12 +19,12 @@ export function App() {
   }
   if (crackpay.status === "error") return <p className="center">Something went wrong. Close the app and open it again.</p>;
 
-  return <Home provider={crackpay.provider} account={crackpay.account} />;
+  return <Home provider={crackpay.provider} account={crackpay.account} handle={crackpay.handle} />;
 }
 
 type Connected = Extract<ReturnType<typeof useCrackPay>, { status: "connected" }>;
 
-function Home({ provider, account }: Pick<Connected, "provider" | "account">) {
+function Home({ provider, account, handle }: Pick<Connected, "provider" | "account" | "handle">) {
   const [balance, setBalance] = useState<bigint | null>(null);
   const [to, setTo] = useState("");
   const [sending, setSending] = useState(false);
@@ -60,7 +60,7 @@ function Home({ provider, account }: Pick<Connected, "provider" | "account">) {
 
   return (
     <main>
-      <h1>My Mini App</h1>
+      <h1>{handle ? `Hi @${handle}` : "My Mini App"}</h1>
 
       <section className="card">
         <span className="label">Your balance</span>

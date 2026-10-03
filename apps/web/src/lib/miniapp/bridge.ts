@@ -24,6 +24,8 @@ const READ_METHODS = new Set([
 export type BridgeDeps = {
   chainId: number;
   account: Address;
+  /** The user's CrackPay handle, without the "@". Null if they have not registered one. */
+  handle: string | null;
   /** Applies the Mini App's policy. Throws an RpcError to refuse. */
   check(tx: TransactionRequest): TransactionSummary;
   /** Shows the request in the CrackPay page, never inside the iframe. */
@@ -81,6 +83,11 @@ export async function handleRequest(deps: BridgeDeps, method: string, params: un
     case "eth_accounts":
     case "eth_requestAccounts":
       return [deps.account];
+
+    // Who the user is in CrackPay. The handle is public on-chain already, so this
+    // tells the app nothing it could not look up from the account.
+    case "crackpay_getProfile":
+      return { account: deps.account, handle: deps.handle };
 
     case "wallet_switchEthereumChain":
       if (requestedChainId(params) !== deps.chainId) {

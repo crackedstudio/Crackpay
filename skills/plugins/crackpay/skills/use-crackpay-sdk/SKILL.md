@@ -40,8 +40,9 @@ if (!crackpay) {
 }
 ```
 
-`account` is the user's address. `walletClient` sends through CrackPay.
-`publicClient` reads from Arc directly. Nothing here prompts the user.
+`account` is the user's address and `handle` their CrackPay handle (without the
+"@", or `null`). `walletClient` sends through CrackPay. `publicClient` reads from
+Arc directly. Nothing here prompts the user.
 
 ### React
 
@@ -54,7 +55,7 @@ function App() {
   if (crackpay.status === "connecting") return <Loading />;
   if (crackpay.status === "unavailable") return <p>Open this app from CrackPay.</p>;
   if (crackpay.status === "error") return <p>Something went wrong.</p>;
-  return <Main account={crackpay.account} provider={crackpay.provider} />;
+  return <Main account={crackpay.account} handle={crackpay.handle} provider={crackpay.provider} />;
 }
 ```
 
@@ -90,6 +91,18 @@ resolves, with CrackPay as the only connector, and connect once on mount.
 ```
 
 Use this only for a page with no build step. Otherwise install the package.
+
+## The user's handle
+
+Every CrackPay user picks a handle, like `@sam`. The SDK gives it to the app with
+no prompt: `handle` from `connectCrackPay()` and `useCrackPay()`, or
+`getCrackPayUser(provider)` for the raw provider.
+
+- Use it to greet the user and to show who is paying ("Paid by @sam").
+- It is public: anyone can look it up from the account on-chain. Showing it is fine.
+- Identify the user by `account`, not by handle. Store the account in your database.
+- It can be `null`; fall back to a short account address.
+- It needs `@crackpay/miniapp-sdk` 0.2.0 or later.
 
 ## After connecting
 

@@ -62,7 +62,7 @@ What is in it:
 
 | File | Purpose |
 |---|---|
-| `src/App.tsx` | `useCrackPay()` states, balance, the demo payment form |
+| `src/App.tsx` | `useCrackPay()` states, a greeting with the user's `@handle`, balance, the demo payment form |
 | `src/crackpay.ts` | Balance read and `sendUsdc`, the two wallet operations |
 | `src/style.css` | A 420 px single column with light and dark themes |
 | `vite.config.ts` | Allows tunnel hosts, for testing in Developer mode |

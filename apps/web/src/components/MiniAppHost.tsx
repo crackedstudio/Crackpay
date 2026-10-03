@@ -69,7 +69,15 @@ function Summary({ app, summary }: { app: MiniApp; summary: TransactionSummary }
   );
 }
 
-export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPaySmartAccount }) {
+export function MiniAppHost({
+  app,
+  account,
+  handle,
+}: {
+  app: MiniApp;
+  account: CrackPaySmartAccount;
+  handle: string | null;
+}) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [src, setSrc] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
@@ -98,6 +106,7 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
     const deps = {
       chainId: arcChain.id,
       account: account.address,
+      handle,
       check: (tx: Parameters<typeof checkTransaction>[1]) => checkTransaction(app.policy, tx),
       confirm,
       async send(tx: Parameters<typeof checkTransaction>[1]) {
@@ -144,7 +153,7 @@ export function MiniAppHost({ app, account }: { app: MiniApp; account: CrackPayS
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [account, app, appOrigin, confirm]);
+  }, [account, app, appOrigin, confirm, handle]);
 
   function decide(approved: boolean) {
     pending?.resolve(approved);
