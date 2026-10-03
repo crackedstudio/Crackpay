@@ -13,6 +13,18 @@ export const LISTING_CATEGORIES = [
   "education",
   "entertainment",
 ] as const;
+/** What each category is called on screen: plain words, not finance jargon. */
+export const CATEGORY_LABELS: Record<(typeof LISTING_CATEGORIES)[number], string> = {
+  finance: "Money",
+  shopping: "Shopping",
+  utility: "Tools",
+  games: "Games",
+  social: "Social",
+  rewards: "Rewards",
+  education: "Learn",
+  entertainment: "Fun",
+};
+
 export const LISTING_NETWORKS = ["arc-testnet", "arc-mainnet"] as const;
 export const LISTING_TOKENS = ["USDC", "EURC"] as const;
 
