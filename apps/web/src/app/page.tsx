@@ -8,12 +8,13 @@ import { Avatar } from "@/components/Avatar";
 import { Mark } from "@/components/Brand";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { TabBar } from "@/components/TabBar";
-import { ArrowDown, ArrowUp, Refresh } from "@/components/icons";
+import { ArrowDown, ArrowUp, Eye, EyeOff, Refresh } from "@/components/icons";
 import { IconButton, Label, LinkButton, Screen, ScreenSkeleton, Skeleton } from "@/components/ui";
 import { useWallet } from "@/components/WalletProvider";
 import { ONBOARDING_MODE } from "@/config/onboarding";
 import { useUsdcBalance } from "@/lib/balance";
 import { dollars } from "@/lib/format";
+import { HIDDEN_AMOUNT, setAmountsHidden, useAmountsHidden } from "@/lib/privacy";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
 
 /**
@@ -71,6 +72,7 @@ const MILLION = 1_000_000_000_000n;
 
 function Home({ account, handle }: { account: CrackPaySmartAccount; handle: string }) {
   const { balance, refresh } = useUsdcBalance(account.address);
+  const hidden = useAmountsHidden();
 
   return (
     <>
@@ -92,22 +94,36 @@ function Home({ account, handle }: { account: CrackPaySmartAccount; handle: stri
           /* The two things anyone opens this app to do, in the thumb zone.
              Apps is not here: it already has a tab. */
           <div className="grid grid-cols-2 gap-2.5">
-            <LinkButton href="/send" className="h-15 text-[1.0625rem] font-bold">
-              <ArrowUp className="h-5 w-5" strokeWidth={2.25} />
-              Send
-            </LinkButton>
-            <LinkButton href="/receive" variant="secondary" className="h-15 text-[1.0625rem] font-bold">
+            <LinkButton href="/add-money" className="h-15 text-[1.0625rem] font-bold">
               <ArrowDown className="h-5 w-5" strokeWidth={2.25} />
-              Receive
+              Deposit
+            </LinkButton>
+            <LinkButton href="/send" variant="secondary" className="h-15 text-[1.0625rem] font-bold">
+              <ArrowUp className="h-5 w-5" strokeWidth={2.25} />
+              Withdraw
             </LinkButton>
           </div>
         }
       >
         {/* The balance sits on the page, not in a card. It is the page. */}
         <div className="flex flex-col gap-2 border-b-[1.5px] border-ink pt-5">
-          <Label>Your balance</Label>
+          <div className="flex items-center justify-between">
+            <Label>Your balance</Label>
+            <IconButton
+              label={hidden ? "Show balance" : "Hide balance"}
+              aria-pressed={hidden}
+              onClick={() => setAmountsHidden(!hidden)}
+              className="-my-2 -mr-2 text-muted"
+            >
+              {hidden ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </IconButton>
+          </div>
           {balance === null ? (
             <Skeleton className="mb-4.5 h-[3.75rem] w-56" />
+          ) : hidden ? (
+            <span className="figure pb-4.5 text-[3.75rem]" aria-label="Balance hidden">
+              {HIDDEN_AMOUNT}
+            </span>
           ) : (
             <span className={`figure pb-4.5 ${balance >= MILLION ? "text-[2.75rem]" : "text-[3.75rem]"}`}>
               {dollars(balance)}
@@ -123,8 +139,8 @@ function Home({ account, handle }: { account: CrackPaySmartAccount; handle: stri
                 Get paid by someone on CrackPay, claim a KashLink, or move USDC in from another wallet.
               </p>
             </div>
-            <LinkButton href="/add-money" size="md">
-              Add money
+            <LinkButton href="/add-money" size="md" variant="secondary">
+              Deposit
             </LinkButton>
           </div>
         )}

@@ -193,7 +193,7 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
   if (step.name === "recipient") {
     return (
       <Screen
-        title="Send"
+        title="Withdraw"
         back="/"
         footer={
           <Button loading={busy} disabled={!to.trim()} form="recipient-form">

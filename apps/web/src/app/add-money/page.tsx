@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { CopyRow } from "@/components/CopyRow";
+import { PayTicket, payLink } from "@/components/PayTicket";
 import { RequireAccount } from "@/components/RequireAccount";
-import { ArrowDown, ChevronRight, External, Link as LinkIcon, Wallet } from "@/components/icons";
+import { ChevronRight, External, Link as LinkIcon, Share, Wallet } from "@/components/icons";
 import { Button, Card, ErrorText, Label, ListRow, Screen, TextField } from "@/components/ui";
 import { arcChain } from "@/lib/arc";
 import { shortAddress } from "@/lib/format";
@@ -56,16 +57,19 @@ function AddMoney({ account, handle }: { account: CrackPaySmartAccount; handle: 
   const [claiming, setClaiming] = useState(false);
 
   return (
-    <Screen title="Add money" back="/">
+    <Screen title="Deposit" back="/">
       <p className="text-muted">Dollars arrive in your account in about a second, with no fees.</p>
 
-      <section className="flex flex-col gap-2">
+      {/* Being paid in person is the quickest deposit, so the code comes first. */}
+      <section className="flex flex-col gap-3">
         <Label>From someone on CrackPay</Label>
+        <PayTicket handle={handle} link={payLink(handle)} />
+        <p className="text-center text-sm text-muted">Scan with any phone camera to pay @{handle}</p>
         <Card>
           <ListRow
-            label={<span className="text-base font-bold text-foreground">Share @{handle}</span>}
-            value={<span className="text-sm font-normal text-muted">Or show your QR code. They pay you straight away.</span>}
-            icon={<ArrowDown className="h-5 w-5" />}
+            label={<span className="text-base font-bold text-foreground">Share my payment link</span>}
+            value={<span className="text-sm font-normal text-muted">Or copy your handle and link.</span>}
+            icon={<Share className="h-5 w-5" />}
             href="/receive"
             trailing={<ChevronRight className="h-5 w-5 text-muted" />}
           />
