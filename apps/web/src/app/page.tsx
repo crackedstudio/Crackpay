@@ -120,11 +120,11 @@ function Home({ account, handle }: { account: CrackPaySmartAccount; handle: stri
             <div className="flex flex-col gap-1">
               <p className="text-[1.0625rem] font-bold">Add your first dollars</p>
               <p className="text-sm leading-5 text-muted">
-                Share your handle with someone who already has CrackPay, and they can pay you straight away.
+                Get paid by someone on CrackPay, claim a KashLink, or move USDC in from another wallet.
               </p>
             </div>
-            <LinkButton href="/receive" size="md" variant="secondary">
-              Share @{handle}
+            <LinkButton href="/add-money" size="md">
+              Add money
             </LinkButton>
           </div>
         )}

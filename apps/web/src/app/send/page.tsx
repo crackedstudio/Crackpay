@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { isAddressEqual } from "viem";
 import { AmountPad } from "@/components/AmountPad";
 import { Avatar } from "@/components/Avatar";
+import { KashLinkRow } from "@/components/KashLinkRow";
 import { RequireAccount } from "@/components/RequireAccount";
 import { Alert, External, Face, Receipt } from "@/components/icons";
 import {
@@ -214,6 +215,8 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
             hint={ONBOARDING_MODE === "phone" ? "Phone numbers need the country code, like +234…" : undefined}
           />
           <ErrorText>{error}</ErrorText>
+
+          <KashLinkRow />
 
           {recents.length > 0 && (
             <section className="flex flex-col gap-3">
