@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { AppIcon } from "@/components/AppIcon";
 import { ChevronRight, Shield } from "@/components/icons";
@@ -33,7 +32,10 @@ function categoriesOf(apps: readonly MiniApp[]): string[] {
 /** One app in the list: what it is, who made it, and where it goes. */
 function AppRow({ app }: { app: MiniApp }) {
   return (
-    <Link href={`/apps/${app.id}`} className="pressable flex items-center gap-3.5 border-b border-hair py-3.5">
+    // A full page load, not a client-side navigation: each app's page is served with a
+    // frame policy naming that app's origin, and an in-app navigation would keep this
+    // page's policy, which frames nothing. The same goes for every link into an app.
+    <a href={`/apps/${app.id}`} className="pressable flex items-center gap-3.5 border-b border-hair py-3.5">
       <AppIcon app={app} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate font-bold">{app.name}</span>
@@ -41,7 +43,7 @@ function AppRow({ app }: { app: MiniApp }) {
         {app.publisher && <span className="truncate font-mono text-[0.625rem] text-muted">{app.publisher}</span>}
       </span>
       <ChevronRight className="h-5 w-5 shrink-0 text-muted" />
-    </Link>
+    </a>
   );
 }
 
@@ -54,13 +56,14 @@ function RecentRow({ apps }: { apps: readonly MiniApp[] }) {
       <ul className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {apps.map((app) => (
           <li key={app.id} className="shrink-0">
-            <Link
+            {/* A full page load; see AppRow. */}
+            <a
               href={`/apps/${app.id}`}
               className="pressable flex w-[5.5rem] flex-col items-center gap-2.5 py-1 text-center"
             >
               <AppIcon app={app} size="lg" className="shadow-[3px_3px_0_var(--ink)]" />
               <span className="w-full truncate text-xs font-semibold">{app.name}</span>
-            </Link>
+            </a>
           </li>
         ))}
       </ul>
