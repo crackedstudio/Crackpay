@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Address } from "viem";
 import { fetchActivity, type ActivityItem } from "@/lib/activity";
 import { dollars, shortAddress } from "@/lib/format";
+import { HIDDEN_AMOUNT, useAmountsHidden } from "@/lib/privacy";
 import { Avatar } from "./Avatar";
 import { ReceiptSheet } from "./ReceiptSheet";
 import { ArrowDown, ArrowUp, Refresh } from "./icons";
@@ -55,6 +56,7 @@ function Rows() {
  * the direction again — money green only ever means money arriving.
  */
 function Row({ item, when, onOpen }: { item: ActivityItem; when: string; onOpen: () => void }) {
+  const hidden = useAmountsHidden();
   const incoming = item.direction === "in";
   const who = item.handle ? `@${item.handle}` : shortAddress(item.counterparty);
   return (
@@ -83,8 +85,14 @@ function Row({ item, when, onOpen }: { item: ActivityItem; when: string; onOpen:
           <span className="font-mono text-[0.6875rem] text-muted">{when}</span>
         </span>
         <span className={`numeric shrink-0 font-bold ${incoming ? "text-money" : "text-ink"}`}>
-          {incoming ? "+" : "−"}
-          {dollars(item.amount)}
+          {hidden ? (
+            HIDDEN_AMOUNT
+          ) : (
+            <>
+              {incoming ? "+" : "−"}
+              {dollars(item.amount)}
+            </>
+          )}
         </span>
       </button>
     </li>

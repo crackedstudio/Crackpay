@@ -14,8 +14,8 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#f3f1ec",
     // Long-press the installed icon to go straight to the two things people do.
     shortcuts: [
-      { name: "Send money", short_name: "Send", url: "/send" },
-      { name: "Receive money", short_name: "Receive", url: "/receive" },
+      { name: "Deposit", short_name: "Deposit", url: "/add-money" },
+      { name: "Withdraw", short_name: "Withdraw", url: "/send" },
     ],
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
