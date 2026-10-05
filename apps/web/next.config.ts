@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  // The design system is shared source, not a built package.
+  transpilePackages: ["@crackpay/brand"],
   async rewrites() {
     // Agents look for skills under either well-known path; there is one copy.
     return [{ source: "/.well-known/skills/:path*", destination: "/.well-known/agent-skills/:path*" }];

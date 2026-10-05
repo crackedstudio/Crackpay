@@ -90,6 +90,12 @@ Violating any of these produces bugs that look like something else. Re-read befo
   src/CashLink.sol
   src/PaymentRouter.sol
   test/
+/packages/brand         The design system, shared by both apps
+  tokens.css            colours, type classes, motion — the only place they live
+  src/                  Mark, Wordmark, icons, Button/LinkButton/Label/Spinner
+/apps/site              Marketing site. Deployed separately, own domain.
+  src/app/page.tsx      the landing page
+  src/config/app.ts     absolute links into the app (NEXT_PUBLIC_APP_URL)
 /apps/web               Next.js PWA
   src/app/              routes
   src/components/
