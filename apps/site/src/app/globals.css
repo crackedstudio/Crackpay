@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@crackpay/brand/tokens.css";
+
+/* Tailwind does not scan node_modules, and the shared package is symlinked
+   there, so its classes have to be pointed at explicitly. */
+@source "../../../../packages/brand/src";

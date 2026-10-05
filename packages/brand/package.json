@@ -1,0 +1,29 @@
+{
+  "name": "@crackpay/brand",
+  "version": "0.1.0",
+  "description": "The CrackPay design system: tokens, brand mark, icons and the shared controls. Internal to this workspace.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./icons": "./src/icons.tsx",
+    "./tokens.css": "./tokens.css"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "next": ">=15",
+    "react": ">=19"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "next": "16.3.8",
+    "react": "19.2.8",
+    "typescript": "^5"
+  }
+}

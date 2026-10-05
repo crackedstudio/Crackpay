@@ -1,0 +1,220 @@
+/*
+ * The CrackPay design system, as one stylesheet. Both the wallet app and the
+ * marketing site import this file, so a colour or a type class changes in one
+ * place and lands in both. Nothing app-specific belongs here.
+ */
+/*
+ * Paper and ink. Warm paper, near-black ink, hard rules and hard shadows —
+ * nothing is soft, blurred or floating. Two greens do two different jobs and
+ * must not be swapped: `go` is a loud fill that only ever appears on something
+ * that moves money or says go, and `money` is its darker text partner for
+ * amounts arriving, which holds AA on paper in daylight.
+ *
+ * Everything below is a token: components never hardcode a colour.
+ */
+:root {
+  --paper: #f3f1ec;
+  --card: #fbfaf7;
+  --surface: #e8e4dc;
+  --ink: #12100e;
+  --muted: #5c564f;
+  --hair: #d6d0c6;
+
+  --go: #3ad07a;
+  --go-ink: #0b1a10;
+  --money: #0a6b3a;
+  --money-soft: #d5f0de;
+
+  --danger: #b4232c;
+  --danger-soft: #f9dfdb;
+  --warn: #995200;
+  --warn-soft: #f8e9c4;
+
+  --scrim: rgb(18 16 14 / 0.45);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0f0e0c;
+    --card: #191714;
+    --surface: #25221d;
+    --ink: #f1eee7;
+    --muted: #a69e94;
+    --hair: #332f29;
+
+    --go: #45e08a;
+    --go-ink: #06140b;
+    --money: #5ee59a;
+    --money-soft: #0d2a1a;
+
+    --danger: #ff7a80;
+    --danger-soft: #2e1214;
+    --warn: #f5b941;
+    --warn-soft: #2c2108;
+
+    --scrim: rgb(0 0 0 / 0.6);
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-hair: var(--hair);
+  --color-go: var(--go);
+  --color-go-ink: var(--go-ink);
+  --color-money: var(--money);
+  --color-money-soft: var(--money-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+
+  --font-sans: var(--font-archivo);
+  --font-mono: var(--font-jetbrains);
+
+  /* Hard shadows only. The offset is the whole effect; there is no blur. */
+  --shadow-slab: 4px 4px 0 var(--ink);
+  --shadow-slab-lg: 6px 6px 0 var(--ink);
+
+  --animate-rise: rise 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-fade: fade 0.18s ease-out;
+  --animate-pop: pop 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+  --animate-bar: bar 1.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes rise {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shimmer {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.85; }
+}
+@keyframes bar {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/*
+ * The motion signature. Money landing hits the screen like a rubber stamp: in
+ * at 170% and −16°, overshoot, settle at −4° as the hard shadow drops under it.
+ * The two run together — `stamp` moves the mark, `thud` drops its shadow.
+ */
+@keyframes stamp {
+  0% { transform: scale(1.7) rotate(-16deg); opacity: 0; }
+  50% { transform: scale(0.93) rotate(-3deg); opacity: 1; }
+  72% { transform: scale(1.04) rotate(-5deg); }
+  100% { transform: scale(1) rotate(-4deg); opacity: 1; }
+}
+@keyframes thud {
+  0%, 45% { box-shadow: 0 0 0 var(--ink); }
+  100% { box-shadow: 5px 5px 0 var(--ink); }
+}
+
+.animate-stamp {
+  transform: rotate(-4deg);
+  animation:
+    stamp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both,
+    thud 0.5s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-archivo), system-ui, sans-serif;
+}
+
+/* Money and codes: fixed-width digits so figures do not jitter as they change. */
+.numeric {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * Display type. Archivo's width axis gives the expanded voice — balances, the
+ * wordmark, the one-word outcomes — without a second font download.
+ */
+.display {
+  font-stretch: 125%;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+.figure {
+  font-stretch: 112%;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+/* The voice for a question put to the user: "What's your number?" */
+.ask {
+  font-stretch: 115%;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+/* Section labels, timestamps and addresses. Mono is never body copy. */
+.label {
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/*
+ * A control presses 3px down into its own shadow rather than scaling. Anything
+ * carrying `.hard` sits on the page; pressed, it is flush with it.
+ */
+.pressable {
+  -webkit-tap-highlight-color: transparent;
+}
+.hard {
+  box-shadow: 0 3px 0 var(--ink);
+  transition:
+    transform 0.08s,
+    box-shadow 0.08s;
+}
+.hard:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/*
+ * A field shows focus through its own wrapper, which carries the rounding. An
+ * outline on the bare input draws a sharp rectangle poking out of the corners.
+ */
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
