@@ -118,8 +118,8 @@ on whichever opened it. Never hardcode the chain:
 - **USDC has two scales.** 6 decimals through its token contract, 18 as a
   transaction `value`. They are the same balance.
 - **One call per transaction.**
-- **Your server must allow framing** by `https://crackpay.xyz` (mainnet) and
-  `https://crackpay.vercel.app` (testnet).
+- **Your server must allow framing** by every host in `CRACKPAY_ORIGINS`:
+  `https://www.crackpay.xyz`, `https://crackpay.xyz` and `https://crackpay.vercel.app`.
 
 ## Testing
 

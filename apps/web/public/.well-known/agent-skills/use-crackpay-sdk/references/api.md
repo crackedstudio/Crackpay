@@ -1,6 +1,6 @@
 # @crackpay/miniapp-sdk API
 
-Version 0.3.0.
+Version 0.3.1.
 
 ## `@crackpay/miniapp-sdk`
 
@@ -8,7 +8,7 @@ Version 0.3.0.
 |---|---|---|
 | `getCrackPayProvider(options?)` | `Promise<MiniAppProvider \| null>` | The provider inside CrackPay, `null` elsewhere. Resolves within `timeoutMs`. Never prompts. |
 | `isFramed()` | `boolean` | Whether the page is in a frame. Synchronous. |
-| `CRACKPAY_ORIGINS` | `readonly string[]` | Hosts trusted by default: `["https://crackpay.xyz", "https://crackpay.vercel.app"]` (mainnet, testnet). |
+| `CRACKPAY_ORIGINS` | `readonly string[]` | Hosts trusted by default: `["https://www.crackpay.xyz", "https://crackpay.xyz", "https://crackpay.vercel.app"]`, all CrackPay on Arc mainnet. |
 | `arcTestnet` | object | `{ id: 5042002, hexId: "0x4cef52", name, rpcUrl, explorerUrl, faucetUrl, testnet: true }` |
 | `arcMainnet` | object | `{ id: 5042, hexId: "0x13b2", name: "Arc", rpcUrl, explorerUrl, faucetUrl: null, testnet: false }` |
 | `ARC_CHAINS` | array | `[arcMainnet, arcTestnet]` |

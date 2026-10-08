@@ -14,15 +14,17 @@ gas. The app never sees a key.
 
 | | |
 |---|---|
-| CrackPay | `https://crackpay.vercel.app` (Arc Testnet) |
+| CrackPay | `https://www.crackpay.xyz` (Arc mainnet, real USDC; `crackpay.vercel.app` is the same app) |
 | SDK | `@crackpay/miniapp-sdk` on npm, entry points `.`, `/viem`, `/react` |
-| Chain | Arc Testnet, ID `5042002` (`0x4cef52`), `arcTestnet` in `viem/chains` |
-| USDC, 6 decimals | `0x3600000000000000000000000000000000000000` |
-| EURC, 6 decimals | `0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a` |
-| Docs | `https://crackpay.vercel.app/developers` |
+| Chain | Arc mainnet, ID `5042` (`0x13b2`), `arc` in `viem/chains`. Arc Testnet is ID `5042002` (`0x4cef52`), `arcTestnet` |
+| USDC, 6 decimals | `0x3600000000000000000000000000000000000000` on both networks |
+| EURC, 6 decimals | mainnet `0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1`, testnet `0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a` |
+| Docs | `https://www.crackpay.xyz/developers` |
 
-Do not invent other addresses or chain IDs. Mainnet is not available yet; if the
-user needs it, say so and build on testnet.
+Do not invent other addresses or chain IDs. Never hardcode the chain: read it
+from CrackPay (`connectCrackPay()` returns `chain`; `getTokens(chain.id)` gives
+its tokens). Deploy your contracts to Arc Testnet first and test them there, then
+to mainnet. Payments inside CrackPay at www.crackpay.xyz move real USDC.
 
 ## Rules every Mini App follows
 

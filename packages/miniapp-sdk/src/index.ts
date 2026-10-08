@@ -8,8 +8,15 @@ export {
   type MiniAppProvider,
 } from "./provider.js";
 
-/** CrackPay hosts a Mini App may trust: crackpay.xyz on Arc mainnet, crackpay.vercel.app on Arc Testnet. */
-export const CRACKPAY_ORIGINS: readonly string[] = ["https://crackpay.xyz", "https://crackpay.vercel.app"];
+/**
+ * CrackPay hosts a Mini App may trust. www.crackpay.xyz is CrackPay on Arc
+ * mainnet (crackpay.xyz redirects there); crackpay.vercel.app serves the same app.
+ */
+export const CRACKPAY_ORIGINS: readonly string[] = [
+  "https://www.crackpay.xyz",
+  "https://crackpay.xyz",
+  "https://crackpay.vercel.app",
+];
 
 export type CrackPayOptions = {
   /**
