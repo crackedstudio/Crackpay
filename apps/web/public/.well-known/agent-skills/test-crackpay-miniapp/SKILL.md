@@ -78,9 +78,9 @@ Remembered per browser.
 2. Tap **Load**.
 
 The app opens under a red "Test app · not reviewed" bar, connected to the user's
-wallet. CrackPay runs on Arc Testnet; the user needs testnet USDC from
-`https://faucet.circle.com` (choose Arc Testnet) sent to their CrackPay account
-address (Receive → Account address).
+wallet. CrackPay at www.crackpay.xyz runs on Arc mainnet, so payments move real
+USDC: test with small amounts, and check your contracts on Arc Testnet first.
+The account needs USDC sent to its address (Receive → Account address).
 
 ## Test apps versus listed apps
 
