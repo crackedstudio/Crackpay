@@ -8,7 +8,7 @@ import { ChevronRight, External, Link as LinkIcon, Share, Wallet } from "@/compo
 import { Button, Card, ErrorText, Label, ListRow, Screen, TextField } from "@/components/ui";
 import { arcChain } from "@/lib/arc";
 import { shortAddress } from "@/lib/format";
-import { KASHLINK_APP_ID, kashLinkAppUrl, kashLinkProblem, parseKashLink } from "@/lib/kashlink";
+import { KASHLINK_APP_ID, kashLinkAppUrl, kashLinkExample, kashLinkProblem, parseKashLink } from "@/lib/kashlink";
 import { useMiniApp } from "@/lib/miniapp/use-miniapps";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
 
@@ -36,7 +36,7 @@ function OpenKashLink() {
         autoCapitalize="none"
         autoCorrect="off"
         spellCheck={false}
-        placeholder="https://testnet.kashlink.live/#…"
+        placeholder={`${kashLinkExample()}/#…`}
         value={link}
         status={error ? "error" : undefined}
         onChange={(event) => {

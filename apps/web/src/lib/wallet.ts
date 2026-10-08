@@ -11,7 +11,7 @@ import {
   toWebAuthnAccount,
   type P256Credential,
 } from "viem/account-abstraction";
-import { arcChain } from "./arc";
+import { arcChain, circleChainPath } from "./arc";
 
 export class WalletConfigError extends Error {
   override name = "WalletConfigError";
@@ -32,7 +32,7 @@ function circleConfig(): { clientKey: string; clientUrl: string } {
 
 function modularTransport() {
   const { clientKey, clientUrl } = circleConfig();
-  return toModularTransport(`${clientUrl}/arcTestnet`, clientKey);
+  return toModularTransport(`${clientUrl}/${circleChainPath}`, clientKey);
 }
 
 /** Creates a new passkey. Prompts the platform authenticator. */

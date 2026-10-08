@@ -22,3 +22,5 @@ fail_on_revert = true
 
 [rpc_endpoints]
 arc_testnet = "https://rpc.testnet.arc.network"
+# Real USDC. Source: https://docs.arc.io/arc/references/connect-to-arc, retrieved 2026-10-08.
+arc_mainnet = "https://rpc.mainnet.arc.io"

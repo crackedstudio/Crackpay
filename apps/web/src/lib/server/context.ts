@@ -1,10 +1,9 @@
 import { privateKeyToAccount } from "viem/accounts";
 import type { Hex } from "viem";
-import { contracts } from "../../config/contracts";
 import { DEFAULT_MINI_APPS } from "../../config/miniapps";
 import { ONBOARDING_MODE } from "../../config/onboarding";
 import { identityRegistryAbi } from "../../config/identity";
-import { arcChain, publicClient } from "../arc";
+import { arcChain, arcContracts, publicClient } from "../arc";
 import { ServerConfigError, requireEnv } from "./errors";
 import type { IdentityDeps } from "./identity-service";
 import { consoleSms, type CodeVerifier } from "./sms";
@@ -54,7 +53,7 @@ export function identityDeps(): IdentityDeps {
   if (globals.crackpayDeps) return globals.crackpayDeps;
 
   const signerKey = requireEnv("ATTESTATION_SIGNER_KEY");
-  const registryAddress = contracts[arcChain.id].identityRegistry;
+  const registryAddress = arcContracts.identityRegistry;
   const read = { address: registryAddress, abi: identityRegistryAbi } as const;
 
   globals.crackpayDeps = {
