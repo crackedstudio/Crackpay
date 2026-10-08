@@ -179,8 +179,12 @@ function DeveloperSettings({ account }: { account: CrackPaySmartAccount }) {
         <Card>
           <SwitchRow
             label="Use test net"
-            description={`CrackPay runs on ${arcChain.name}. Arc Mainnet is not live in CrackPay yet.`}
-            checked
+            description={
+              arcChain.testnet
+                ? `This is the CrackPay test app, on ${arcChain.name}. Payments here use test USDC.`
+                : `This is CrackPay on ${arcChain.name} mainnet, with real USDC. Test your app in the CrackPay test app first.`
+            }
+            checked={arcChain.testnet === true}
             disabled
           />
         </Card>

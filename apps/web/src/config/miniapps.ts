@@ -1,7 +1,7 @@
-import { arcTestnet } from "viem/chains";
 import type { Policy } from "../lib/miniapp/policy";
+import { arcContracts } from "../lib/arc";
+import { IS_MAINNET } from "./network";
 import type { MiniAppRecord } from "../lib/miniapp/registry";
-import { contracts } from "./contracts";
 
 export type MiniApp = {
   id: string;
@@ -19,13 +19,12 @@ export type MiniApp = {
   test?: boolean;
 };
 
-const tokens = contracts[arcTestnet.id];
-
 /**
  * The registry lives in the database and is managed from /admin. This list is
- * only what a local dev server shows when no database is configured.
+ * only what a local dev server shows when no database is configured. KashLink's
+ * escrow below is its testnet deployment, so a mainnet build starts empty.
  */
-export const DEFAULT_MINI_APPS: readonly MiniAppRecord[] = [
+export const DEFAULT_MINI_APPS: readonly MiniAppRecord[] = IS_MAINNET ? [] : [
   {
     id: "kashlink",
     name: "KashLink",
@@ -88,8 +87,8 @@ export function testMiniApp(input: string): MiniApp | null {
     policy: {
       contracts: [],
       tokens: [
-        { symbol: "USDC", address: tokens.usdc },
-        { symbol: "EURC", address: tokens.eurc },
+        { symbol: "USDC", address: arcContracts.usdc },
+        { symbol: "EURC", address: arcContracts.eurc },
       ],
       unrestricted: true,
     },

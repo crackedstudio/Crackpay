@@ -16,7 +16,16 @@ describe("parseKashLink", () => {
   });
 
   it("recognises a mainnet link and says so", () => {
-    expect(parseKashLink(`https://arc.kashlink.live/#${KEY}`)).toEqual({ ok: false, reason: "mainnet" });
+    expect(parseKashLink(`https://arc.kashlink.live/#${KEY}`)).toEqual({ ok: false, reason: "other_network" });
+  });
+
+  it("on mainnet, opens mainnet links and turns testnet ones away", () => {
+    expect(parseKashLink(`https://arc.kashlink.live/#${KEY}`, "mainnet")).toEqual({ ok: true, fragment: KEY });
+    expect(parseKashLink(`https://kashlink.live/#${KEY}`, "mainnet")).toEqual({ ok: true, fragment: KEY });
+    expect(parseKashLink(`https://testnet.kashlink.live/#${KEY}`, "mainnet")).toEqual({
+      ok: false,
+      reason: "other_network",
+    });
   });
 
   it.each([

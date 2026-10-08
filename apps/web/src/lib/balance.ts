@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { erc20Abi, type Address } from "viem";
-import { contracts } from "@/config/contracts";
-import { arcChain, publicClient } from "./arc";
+import { arcContracts, publicClient } from "./arc";
 
 const REFRESH_MS = 8_000;
 
@@ -18,7 +17,7 @@ export function useUsdcBalance(address: Address): { balance: bigint | null; refr
   const refresh = useCallback(() => {
     if (process.env.NEXT_PUBLIC_DEMO === "1") { setBalance(1240500000n); return; }
     publicClient
-      .readContract({ address: contracts[arcChain.id].usdc, abi: erc20Abi, functionName: "balanceOf", args: [address] })
+      .readContract({ address: arcContracts.usdc, abi: erc20Abi, functionName: "balanceOf", args: [address] })
       .then(setBalance, (error: unknown) => console.error("Balance read failed", error));
   }, [address]);
 

@@ -1,9 +1,8 @@
 import { encodeTransfer } from "@circle-fin/modular-wallets-core";
 import { encodeFunctionData, type Address, type Hash, type Hex } from "viem";
 import { WaitForUserOperationReceiptTimeoutError } from "viem/account-abstraction";
-import { contracts } from "../config/contracts";
 import { identityRegistryAbi } from "../config/identity";
-import { arcChain } from "./arc";
+import { arcContracts } from "./arc";
 import { createArcBundlerClient, type CrackPaySmartAccount } from "./wallet";
 
 type Call = { to: Address; data?: Hex; value?: bigint };
@@ -50,7 +49,7 @@ export function sendUsdc(
   to: Address,
   amount: bigint,
 ) {
-  const usdc = contracts[arcChain.id].usdc;
+  const usdc = arcContracts.usdc;
   return sendSponsoredUserOp(account, [encodeTransfer(to, usdc, amount)]);
 }
 
@@ -64,5 +63,5 @@ export function registerIdentity(
     functionName: "register",
     args: [attestation.phoneHash, attestation.handle, BigInt(attestation.deadline), attestation.signature],
   });
-  return sendSponsoredUserOp(account, [{ to: contracts[arcChain.id].identityRegistry, data }]);
+  return sendSponsoredUserOp(account, [{ to: arcContracts.identityRegistry, data }]);
 }

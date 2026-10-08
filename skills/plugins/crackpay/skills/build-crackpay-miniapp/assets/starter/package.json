@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@crackpay/miniapp-sdk": "0.2.0",
+    "@crackpay/miniapp-sdk": "0.3.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "viem": "2.57.2"

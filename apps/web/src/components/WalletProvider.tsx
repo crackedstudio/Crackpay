@@ -2,10 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { P256Credential } from "viem/account-abstraction";
-import { contracts } from "@/config/contracts";
 import { identityRegistryAbi } from "@/config/identity";
 import { api } from "@/lib/api";
-import { arcChain, publicClient } from "@/lib/arc";
+import { arcContracts, publicClient } from "@/lib/arc";
 import { clearCredential, loadCredential, saveCredential } from "@/lib/session";
 import { toSmartAccount, type CrackPaySmartAccount } from "@/lib/wallet";
 
@@ -28,7 +27,7 @@ const WalletContext = createContext<Wallet | null>(null);
 // The chain is the source of truth for who an account is.
 async function readHandle(account: CrackPaySmartAccount): Promise<string | null> {
   const handle = await publicClient.readContract({
-    address: contracts[arcChain.id].identityRegistry,
+    address: arcContracts.identityRegistry,
     abi: identityRegistryAbi,
     functionName: "reverse",
     args: [account.address],

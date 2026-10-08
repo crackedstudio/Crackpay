@@ -12,6 +12,7 @@ import {IdentityRegistry} from "../src/IdentityRegistry.sol";
 ///   IDENTITY_RECOVERY_DELAY     recovery timelock in seconds, 1 to 30 days
 ///
 ///   arc-forge script script/DeployIdentityRegistry.s.sol --rpc-url arc_testnet --broadcast
+///   arc-forge script script/DeployIdentityRegistry.s.sol --rpc-url arc_mainnet --broadcast   (real USDC)
 contract DeployIdentityRegistry is Script {
     function run() external returns (IdentityRegistry registry) {
         uint256 deployerKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
