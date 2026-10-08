@@ -1,5 +1,5 @@
 import type { Address, Hex } from "viem";
-import type { MiniAppRecord } from "../miniapp/registry";
+import { CURRENT_NETWORK, type MiniAppRecord } from "../miniapp/registry";
 
 export type Submission = {
   id: string;
@@ -74,7 +74,8 @@ export class MemoryStore implements Store {
 
   constructor(now: () => number = Date.now, miniApps: readonly MiniAppRecord[] = []) {
     this.now = now;
-    for (const app of miniApps) this.miniApps.set(app.id, app);
+    // Like the database, this deployment only holds its own network's apps.
+    for (const app of miniApps) if (app.network === CURRENT_NETWORK) this.miniApps.set(app.id, app);
   }
 
   async hit(key: string, windowSeconds: number, max: number): Promise<boolean> {
@@ -170,6 +171,7 @@ export class MemoryStore implements Store {
   }
 
   async saveMiniApp(app: MiniAppRecord): Promise<void> {
+    if (app.network !== CURRENT_NETWORK) return;
     this.miniApps.set(app.id, { ...app });
   }
 

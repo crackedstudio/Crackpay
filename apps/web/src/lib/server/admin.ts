@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import { RegistryInputError, parseMiniAppInput, type MiniAppRecord } from "../miniapp/registry";
+import { CURRENT_NETWORK, RegistryInputError, parseMiniAppInput, type MiniAppRecord } from "../miniapp/registry";
 import { ApiError, ServerConfigError } from "./errors";
 import type { Store, Submission } from "./store";
 
@@ -36,6 +36,13 @@ export async function saveMiniAppFromInput(store: Store, input: unknown, expecte
     throw error;
   }
 
+  if (record.network !== CURRENT_NETWORK) {
+    throw new ApiError(
+      400,
+      "invalid_miniapp",
+      `This CrackPay runs on ${CURRENT_NETWORK}. List ${record.network} apps from that network's admin.`,
+    );
+  }
   if (expectedId !== undefined && record.id !== expectedId) {
     throw new ApiError(400, "invalid_miniapp", "An app's id cannot be changed. Create a new app instead.");
   }

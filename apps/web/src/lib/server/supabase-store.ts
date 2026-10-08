@@ -87,11 +87,19 @@ function unwrap<T>(result: { data: T; error: { message: string } | null }, actio
   return result.data;
 }
 
-/** Postgres-backed store. Uses the service role key, so it must only run on the server. */
+/**
+ * Postgres-backed store. Uses the service role key, so it must only run on the server.
+ * Mainnet and testnet share one database; Mini Apps are scoped to `network`, the
+ * network of this deployment, so each CrackPay only sees and edits its own.
+ */
 export class SupabaseStore implements Store {
   private readonly db: SupabaseClient;
 
-  constructor(url: string, serviceRoleKey: string) {
+  constructor(
+    url: string,
+    serviceRoleKey: string,
+    private readonly network: MiniAppRecord["network"],
+  ) {
     this.db = createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
   }
 
@@ -207,12 +215,23 @@ export class SupabaseStore implements Store {
   }
 
   async listMiniApps(): Promise<MiniAppRecord[]> {
-    const result = await this.db.from("miniapps").select("*").order("sort_order").order("name").returns<MiniAppRow[]>();
+    const result = await this.db
+      .from("miniapps")
+      .select("*")
+      .eq("network", this.network)
+      .order("sort_order")
+      .order("name")
+      .returns<MiniAppRow[]>();
     return (unwrap(result, "list mini apps") ?? []).map(toRecord);
   }
 
   async getMiniApp(id: string): Promise<MiniAppRecord | null> {
-    const result = await this.db.from("miniapps").select("*").eq("id", id).maybeSingle<MiniAppRow>();
+    const result = await this.db
+      .from("miniapps")
+      .select("*")
+      .eq("id", id)
+      .eq("network", this.network)
+      .maybeSingle<MiniAppRow>();
     const row = unwrap(result, "get mini app");
     return row ? toRecord(row) : null;
   }
@@ -234,13 +253,13 @@ export class SupabaseStore implements Store {
         sort_order: app.sortOrder,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "id" },
+      { onConflict: "id,network" },
     );
     unwrap(result, "save mini app");
   }
 
   async deleteMiniApp(id: string): Promise<void> {
-    const result = await this.db.from("miniapps").delete().eq("id", id);
+    const result = await this.db.from("miniapps").delete().eq("id", id).eq("network", this.network);
     unwrap(result, "delete mini app");
   }
 }
