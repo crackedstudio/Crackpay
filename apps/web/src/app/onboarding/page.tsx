@@ -25,7 +25,7 @@ import { api } from "@/lib/api";
 import { errorText } from "@/lib/format";
 import { isValidHandle, normalizeHandle } from "@/lib/handle";
 import { safeNext } from "@/lib/routing";
-import { registerIdentity } from "@/lib/userop";
+import { GasFundsError, registerIdentity } from "@/lib/userop";
 import { loginWithPasskey, registerPasskey } from "@/lib/wallet";
 
 /**
@@ -45,7 +45,8 @@ type Step =
   /** What a passkey is, before the operating system asks for one. */
   | { name: "passkey" }
   | { name: "creating"; stage: Stage }
-  | { name: "done"; handle: string };
+  /** `pending`: the account is ready but the handle is not registered yet (no fee money). */
+  | { name: "done"; handle: string; pending?: boolean };
 
 /** How far the account creation has got, for the checklist on screen. */
 type Stage = "passkey" | "account" | "finishing";
@@ -192,7 +193,18 @@ function Onboarding() {
 
       setStep({ name: "creating", stage: "account" });
       const attestation = await api.post<Attestation>("/api/identity/attest", { account: account.address, handle: cleanHandle });
-      const result = await registerIdentity(account, attestation);
+      let result;
+      try {
+        result = await registerIdentity(account, attestation);
+      } catch (caught) {
+        // Free network fees are paused and a new account has nothing to pay the
+        // fee with. The account itself needs no transaction, so it is ready:
+        // keep the handle to claim from the home screen once money arrives.
+        if (!(caught instanceof GasFundsError)) throw caught;
+        wallet.setPendingHandle(cleanHandle);
+        setStep({ name: "done", handle: cleanHandle, pending: true });
+        return;
+      }
       if (result.status !== "confirmed") {
         throw new Error(
           result.status === "reverted"
@@ -400,6 +412,33 @@ function Onboarding() {
           </ul>
           <p className="text-sm text-muted">Keep this screen open. It only takes a moment.</p>
         </div>
+      </Screen>
+    );
+  }
+
+  if (step.name === "done" && step.pending) {
+    return (
+      <Screen
+        footer={
+          <>
+            <LinkButton href="/add-money">Add money</LinkButton>
+            <LinkButton href="/" variant="ghost" className="h-12">
+              Go to my account
+            </LinkButton>
+          </>
+        }
+      >
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+          <Stamp size="md" />
+          <div className="flex flex-col gap-1.5">
+            <h1 className="display text-[2.125rem]">Your account is ready</h1>
+            <p className="text-lg text-muted">
+              Add a little money to claim <span className="font-bold text-ink">@{step.handle}</span>. Free network fees
+              are paused for now, so registering it costs about a cent.
+            </p>
+          </div>
+        </div>
+        <InstallPrompt />
       </Screen>
     );
   }

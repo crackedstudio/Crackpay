@@ -6,7 +6,7 @@ import { isAddressEqual } from "viem";
 import { AmountPad } from "@/components/AmountPad";
 import { Avatar } from "@/components/Avatar";
 import { KashLinkRow } from "@/components/KashLinkRow";
-import { RequireAccount } from "@/components/RequireAccount";
+import { RequireSignedIn } from "@/components/RequireAccount";
 import { Alert, External, Face, Receipt } from "@/components/icons";
 import {
   Button,
@@ -29,6 +29,7 @@ import { useRecents } from "@/lib/recents";
 import { resolveRecipient, type Recipient } from "@/lib/recipient";
 import { sendUsdc, type UserOpResult } from "@/lib/userop";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
+import { NETWORK_FEE } from "@/config/fees";
 
 type Step =
   /** A payment link arrived with a recipient on it; look them up before asking anything. */
@@ -313,7 +314,7 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
         <Card>
           <div className="flex items-center px-4 py-3.5">
             <span className="text-sm text-muted">Fee</span>
-            <span className="ml-auto font-semibold">Free</span>
+            <span className="ml-auto font-semibold">{NETWORK_FEE}</span>
           </div>
           <div className="flex items-center border-t border-hair px-4 py-3.5">
             <span className="text-sm text-muted">Arrives</span>
@@ -427,13 +428,13 @@ function SendFlow({ account }: { account: CrackPaySmartAccount }) {
 
 export default function Send() {
   return (
-    <RequireAccount>
+    <RequireSignedIn>
       {(account) => (
         // useSearchParams needs a Suspense boundary to prerender.
         <Suspense>
           <SendFlow account={account} />
         </Suspense>
       )}
-    </RequireAccount>
+    </RequireSignedIn>
   );
 }

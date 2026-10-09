@@ -10,6 +10,7 @@ import { Sheet } from "./Sheet";
 import { useToast } from "./Toast";
 import { Copy, External } from "./icons";
 import { Label } from "./ui";
+import { FREE_FEES_PAUSED } from "@/config/fees";
 
 const stamp = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
@@ -68,7 +69,10 @@ export function ReceiptSheet({ item, onClose }: { item: ActivityItem; onClose: (
         {/* The displayed figure rounds to cents; the receipt shows every unit that moved. */}
         {exact !== dollars(item.amount).slice(1) && <Line label="Exact amount">${exact}</Line>}
         <Line label="Date">{stamp.format(item.time)}</Line>
-        <Line label="Network fee">Free</Line>
+        {/* While free fees are paused a past payment may or may not have been
+            sponsored, and the history does not say which: state nothing rather
+            than something wrong. */}
+        {(incoming || !FREE_FEES_PAUSED) && <Line label="Network fee">{incoming ? "None" : "Free"}</Line>}
         <button type="button" onClick={copyHash} className="pressable flex w-full items-center py-3 text-left text-sm">
           <Label>Transaction</Label>
           <span className="ml-auto truncate pl-3 font-mono text-[0.8125rem] font-semibold">
