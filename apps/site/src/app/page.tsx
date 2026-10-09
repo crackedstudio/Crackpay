@@ -54,7 +54,7 @@ const promises = [
 const steps = [
   {
     title: "Pick your handle",
-    body: "Verify your number once and choose an @handle. That is the whole of what someone needs to pay you.",
+    body: "Choose an @handle and save a passkey. That handle is the whole of what someone needs to pay you.",
   },
   {
     title: "Get your first dollars",
@@ -339,9 +339,9 @@ export default function Landing() {
               ))}
             </div>
             <p className="max-w-[40rem] pt-2 text-sm text-muted">
-              There is no recovery step to set up. Your passkey syncs with your phone account, so your number and your
-              face sign you back in on a new phone. Signing out only removes the account from that browser — your money
-              stays where it is.
+              There is no recovery step to set up. Your passkey syncs with your phone account, so your face signs you
+              back in on a new phone. Signing out only removes the account from that browser — your money stays where
+              it is.
             </p>
           </div>
         </section>
@@ -387,7 +387,7 @@ export default function Landing() {
             Open an account in under a minute.
           </h2>
           <p className="max-w-[34rem] text-lg leading-[1.45] text-muted">
-            Your number, your handle, and the unlock you already use. There is nothing else to set up.
+            Your handle and the unlock you already use. There is nothing else to set up.
           </p>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <div className="w-full sm:w-56">

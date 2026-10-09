@@ -22,12 +22,14 @@ export const APP = {
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 
 /**
- * Mirrors `apps/web/src/config/onboarding.ts`. In phone mode the onboarding
- * flow recognises a number that already has an account and offers its passkey,
- * so a returning user goes through the same door.
+ * Mirrors `apps/web/src/config/onboarding.ts`, and must match it: CrackPay
+ * collects no phone number today, so a returning user has no number to be
+ * recognised by and goes to the passkey door instead. In phone mode the
+ * onboarding flow recognises a number that already has an account and offers
+ * its passkey, so both doors lead there and this points at onboarding.
  */
 const ONBOARDING_MODE: "phone" | "passkey" =
-  process.env.NEXT_PUBLIC_ONBOARDING_MODE === "passkey" ? "passkey" : "phone";
+  process.env.NEXT_PUBLIC_ONBOARDING_MODE === "phone" ? "phone" : "passkey";
 
 export const RETURNING = ONBOARDING_MODE === "phone" ? APP.onboarding : APP.signin;
 
