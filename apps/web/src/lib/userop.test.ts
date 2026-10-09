@@ -7,7 +7,7 @@ const bundler = {
   request: vi.fn(),
   waitForUserOperationReceipt: vi.fn(),
 };
-const chain = { estimateFeesPerGas: vi.fn(), getBalance: vi.fn() };
+const chain = { estimateFeesPerGas: vi.fn(), getBalance: vi.fn(), readContract: vi.fn() };
 
 vi.mock("./wallet", () => ({ createArcBundlerClient: () => bundler }));
 vi.mock("./arc", () => ({
@@ -52,9 +52,19 @@ beforeEach(() => {
     actualGasCost: parseGwei("40") * 80_000n, // 0.0032 USDC, native units
   });
   chain.estimateFeesPerGas.mockResolvedValue({ maxFeePerGas: parseGwei("40"), maxPriorityFeePerGas: parseGwei("1") });
+  chain.readContract.mockResolvedValue(0n); // no EntryPoint deposit
 });
 
 describe("sendUserOp", () => {
+  it("lets a deposit left in the EntryPoint by an earlier fee pay this one", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    bundler.prepareUserOperation.mockRejectedValueOnce(new Error("paused")).mockResolvedValueOnce(op(parseGwei("40")));
+    chain.getBalance.mockResolvedValue(0n);
+    chain.readContract.mockResolvedValue(parseGwei("40") * 100_000n); // exactly this op's worst case
+
+    await expect(sendUserOp(account, calls)).resolves.toMatchObject({ status: "confirmed" });
+  });
+
   it("counts the payment against the balance too, so a fee is never spent on a payment that cannot go through", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     bundler.prepareUserOperation.mockRejectedValueOnce(new Error("paused")).mockResolvedValueOnce(op(parseGwei("40")));

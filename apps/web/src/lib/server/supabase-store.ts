@@ -89,8 +89,9 @@ function unwrap<T>(result: { data: T; error: { message: string } | null }, actio
 
 /**
  * Postgres-backed store. Uses the service role key, so it must only run on the server.
- * Mainnet and testnet share one database; Mini Apps are scoped to `network`, the
- * network of this deployment, so each CrackPay only sees and edits its own.
+ * Mainnet and testnet share one database; users and Mini Apps are scoped to
+ * `network`, the network of this deployment, so each CrackPay only sees and
+ * edits its own.
  */
 export class SupabaseStore implements Store {
   private readonly db: SupabaseClient;
@@ -145,13 +146,18 @@ export class SupabaseStore implements Store {
   }
 
   async getUserById(id: string): Promise<User | null> {
-    const result = await this.db.from("users").select("*").eq("id", id).maybeSingle<UserRow>();
+    const result = await this.db.from("users").select("*").eq("id", id).eq("network", this.network).maybeSingle<UserRow>();
     const row = unwrap(result, "get user");
     return row ? toUser(row) : null;
   }
 
   async getUserByPhone(phoneLookup: Hex): Promise<User | null> {
-    const result = await this.db.from("users").select("*").eq("phone_lookup", phoneLookup).maybeSingle<UserRow>();
+    const result = await this.db
+      .from("users")
+      .select("*")
+      .eq("phone_lookup", phoneLookup)
+      .eq("network", this.network)
+      .maybeSingle<UserRow>();
     const row = unwrap(result, "get user by phone");
     return row ? toUser(row) : null;
   }
@@ -167,8 +173,9 @@ export class SupabaseStore implements Store {
           smart_account: user.smartAccount,
           handle: user.handle,
           status: "pending",
+          network: this.network,
         },
-        { onConflict: "phone_lookup" },
+        { onConflict: "phone_lookup,network" },
       )
       .select("*")
       .single<UserRow>();
@@ -178,7 +185,7 @@ export class SupabaseStore implements Store {
   }
 
   async markRegistered(id: string): Promise<void> {
-    const result = await this.db.from("users").update({ status: "registered" }).eq("id", id);
+    const result = await this.db.from("users").update({ status: "registered" }).eq("id", id).eq("network", this.network);
     unwrap(result, "mark registered");
   }
 
