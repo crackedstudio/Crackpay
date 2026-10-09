@@ -40,7 +40,12 @@ const op = (maxFeePerGas: bigint) => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  bundler.request.mockResolvedValue("0xhash");
+  // Circle quotes 41.5 gwei with a 1.5 gwei tip, as it did on 2026-10-09.
+  bundler.request.mockImplementation(async ({ method }: { method: string }) =>
+    method === "circle_getUserOperationGasPrice"
+      ? { low: { maxFeePerGas: "41500000000", maxPriorityFeePerGas: "1500000000" } }
+      : "0xhash",
+  );
   bundler.waitForUserOperationReceipt.mockResolvedValue({
     success: true,
     receipt: { transactionHash: "0xtx" },
@@ -79,22 +84,28 @@ describe("sendUserOp", () => {
 
     const selfPaid = bundler.prepareUserOperation.mock.calls[1]?.[0];
     expect(selfPaid).not.toHaveProperty("paymaster");
-    expect(selfPaid).toMatchObject({ maxFeePerGas: parseGwei("40") });
+    // Circle's own quote, which its bundler accepts.
+    expect(selfPaid).toMatchObject({ maxFeePerGas: parseGwei("41.5"), maxPriorityFeePerGas: parseGwei("1.5") });
     expect(account.signUserOperation).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({ status: "confirmed", gas: { sponsored: false, fee: 3_200n } });
   });
 
-  it("never bids under Arc's 20 gwei floor when paying its own fee", async () => {
+  it("never bids under Arc's 20 gwei floor or Circle's 1 gwei tip, even when the quote fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    chain.estimateFeesPerGas.mockResolvedValue({ maxFeePerGas: parseGwei("2"), maxPriorityFeePerGas: parseGwei("30") });
+    bundler.request.mockImplementation(async ({ method }: { method: string }) => {
+      if (method === "circle_getUserOperationGasPrice") throw new Error("quote unavailable");
+      return "0xhash";
+    });
+    // What Arc's node suggested on 2026-10-09: a tip of about a thousand wei.
+    chain.estimateFeesPerGas.mockResolvedValue({ maxFeePerGas: parseGwei("2"), maxPriorityFeePerGas: 1_323n });
     bundler.prepareUserOperation.mockRejectedValueOnce(new Error("paused")).mockResolvedValueOnce(op(parseGwei("20")));
     chain.getBalance.mockResolvedValue(10n ** 18n);
 
     await sendUserOp(account, calls);
 
     expect(bundler.prepareUserOperation.mock.calls[1]?.[0]).toMatchObject({
-      maxFeePerGas: parseGwei("20"),
-      maxPriorityFeePerGas: parseGwei("20"),
+      maxFeePerGas: parseGwei("21"),
+      maxPriorityFeePerGas: parseGwei("1"),
     });
   });
 
@@ -109,6 +120,6 @@ describe("sendUserOp", () => {
     // 100k gas at 40 gwei = 0.004 USDC = 4,000 base units.
     await expect(sent).rejects.toMatchObject({ fee: 4_000n });
     expect(account.signUserOperation).not.toHaveBeenCalled();
-    expect(bundler.request).not.toHaveBeenCalled();
+    expect(bundler.request).not.toHaveBeenCalledWith(expect.objectContaining({ method: "eth_sendUserOperation" }));
   });
 });
