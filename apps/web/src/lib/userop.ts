@@ -50,12 +50,34 @@ const RECEIPT_TIMEOUT_MS = 30_000;
 
 // Arc's mempool rejects a maxFeePerGas under 20 gwei, whatever the estimate says.
 const FEE_FLOOR = parseGwei("20");
+// Circle's bundler rejects a userOp tipping under 1 gwei ("maxPriorityFeePerGas
+// ... must be at least 1000000000"). Arc's own node suggests about 1,000 wei.
+const PRIORITY_FLOOR = parseGwei("1");
 
-/** Fees for a userOp the account pays for itself, clamped up to Arc's floor. */
-async function selfPaidFees() {
-  const { maxFeePerGas, maxPriorityFeePerGas } = await publicClient.estimateFeesPerGas();
-  const max = maxFeePerGas > FEE_FLOOR ? maxFeePerGas : FEE_FLOOR;
-  return { maxFeePerGas: max, maxPriorityFeePerGas: maxPriorityFeePerGas > max ? max : maxPriorityFeePerGas };
+type GasPriceTier = { maxFeePerGas: string; maxPriorityFeePerGas: string };
+
+/**
+ * Fees for a userOp the account pays for itself. Circle's bundler quotes the
+ * price it will accept (the `low` tier is enough to land in the next block on
+ * Arc); if that quote is unavailable, Arc's node estimate is used instead. Both
+ * are then clamped up to the floors above.
+ */
+async function selfPaidFees(bundler: ReturnType<typeof createArcBundlerClient>) {
+  let maxFeePerGas: bigint;
+  let maxPriorityFeePerGas: bigint;
+  try {
+    const quote = (await bundler.request({ method: "circle_getUserOperationGasPrice", params: [] } as never)) as {
+      low: GasPriceTier;
+    };
+    maxFeePerGas = BigInt(quote.low.maxFeePerGas);
+    maxPriorityFeePerGas = BigInt(quote.low.maxPriorityFeePerGas);
+  } catch (error) {
+    console.error("[crackpay] Circle's gas price quote failed; using Arc's estimate", error);
+    ({ maxFeePerGas, maxPriorityFeePerGas } = await publicClient.estimateFeesPerGas());
+  }
+  const priority = maxPriorityFeePerGas > PRIORITY_FLOOR ? maxPriorityFeePerGas : PRIORITY_FLOOR;
+  const floor = FEE_FLOOR + priority;
+  return { maxFeePerGas: maxFeePerGas > floor ? maxFeePerGas : floor, maxPriorityFeePerGas: priority };
 }
 
 /** The most this userOp can cost, in native 18-decimal units (the EntryPoint's prefund). */
@@ -87,7 +109,7 @@ async function prepare(account: CrackPaySmartAccount, calls: readonly Call[], sp
   const op = (await bundler.prepareUserOperation({
     account,
     calls: [...calls],
-    ...(await selfPaidFees()),
+    ...(await selfPaidFees(bundler)),
   })) as UserOperation;
   // The fee and the payment come out of the same USDC balance, and the fee is
   // taken first: if both do not fit, the payment would revert with the fee spent.
