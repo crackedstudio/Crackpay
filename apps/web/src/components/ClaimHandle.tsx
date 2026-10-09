@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Hex } from "viem";
 import { ApiClientError, api } from "@/lib/api";
 import { errorText } from "@/lib/format";
+import { recordRegistration } from "@/lib/identity-client";
 import { GasFundsError, registerIdentity } from "@/lib/userop";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
 import { Button, Callout, LinkButton } from "./ui";
@@ -36,7 +37,7 @@ export function ClaimHandle({ account, handle, balance }: { account: CrackPaySma
             : "The registration was submitted but not confirmed. Wait a moment and try again.",
         );
       }
-      await api.post("/api/identity/confirm", { account: account.address });
+      await recordRegistration(account.address);
       await wallet.refreshHandle();
     } catch (caught) {
       if (caught instanceof ApiClientError && caught.code === "handle_taken") setTaken(true);

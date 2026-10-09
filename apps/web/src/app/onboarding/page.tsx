@@ -24,6 +24,7 @@ import { ONBOARDING_MODE } from "@/config/onboarding";
 import { api } from "@/lib/api";
 import { errorText } from "@/lib/format";
 import { isValidHandle, normalizeHandle } from "@/lib/handle";
+import { recordRegistration } from "@/lib/identity-client";
 import { safeNext } from "@/lib/routing";
 import { GasFundsError, registerIdentity } from "@/lib/userop";
 import { loginWithPasskey, registerPasskey } from "@/lib/wallet";
@@ -214,7 +215,7 @@ function Onboarding() {
       }
 
       setStep({ name: "creating", stage: "finishing" });
-      await api.post("/api/identity/confirm", { account: account.address });
+      await recordRegistration(account.address);
       await wallet.refreshHandle();
       // Not straight to `next`: a brand-new account has nothing in it, and the
       // one thing it needs is a way to get funded.

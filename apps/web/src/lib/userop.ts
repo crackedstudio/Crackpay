@@ -1,5 +1,5 @@
 import { encodeTransfer } from "@circle-fin/modular-wallets-core";
-import { encodeFunctionData, parseGwei, type Address, type Hash, type Hex } from "viem";
+import { encodeFunctionData, parseAbi, parseGwei, type Address, type Hash, type Hex } from "viem";
 import {
   WaitForUserOperationReceiptTimeoutError,
   formatUserOperationRequest,
@@ -47,6 +47,8 @@ export class GasFundsError extends Error {
 
 // Arc is final in under a second, so a receipt this late is not coming.
 const RECEIPT_TIMEOUT_MS = 30_000;
+
+const entryPointAbi = parseAbi(["function balanceOf(address account) view returns (uint256)"]);
 
 // Arc's mempool rejects a maxFeePerGas under 20 gwei, whatever the estimate says.
 const FEE_FLOOR = parseGwei("20");
@@ -113,9 +115,21 @@ async function prepare(account: CrackPaySmartAccount, calls: readonly Call[], sp
   })) as UserOperation;
   // The fee and the payment come out of the same USDC balance, and the fee is
   // taken first: if both do not fit, the payment would revert with the fee spent.
+  // What an earlier userOp left unused of its fee sits as a deposit in the
+  // EntryPoint and pays this fee first, as the bundler's own check counts it.
   const cost = maxCost(op);
   const native = calls.reduce((sum, call) => sum + (call.value ?? 0n), 0n);
-  if ((await publicClient.getBalance({ address: account.address })) < cost + native + baseToNative(spend)) {
+  const [balance, deposit] = await Promise.all([
+    publicClient.getBalance({ address: account.address }),
+    publicClient.readContract({
+      address: account.entryPoint.address,
+      abi: entryPointAbi,
+      functionName: "balanceOf",
+      args: [account.address],
+    }),
+  ]);
+  const owed = (cost > deposit ? cost - deposit : 0n) + native + baseToNative(spend);
+  if (balance < owed) {
     throw new GasFundsError(nativeToBaseCeil(cost));
   }
   return { bundler, op, sponsored: false as const };
