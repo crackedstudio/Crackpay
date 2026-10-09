@@ -1,6 +1,6 @@
 # @crackpay/miniapp-sdk API
 
-Version 0.2.0.
+Version 0.3.1.
 
 ## `@crackpay/miniapp-sdk`
 
@@ -8,9 +8,14 @@ Version 0.2.0.
 |---|---|---|
 | `getCrackPayProvider(options?)` | `Promise<MiniAppProvider \| null>` | The provider inside CrackPay, `null` elsewhere. Resolves within `timeoutMs`. Never prompts. |
 | `isFramed()` | `boolean` | Whether the page is in a frame. Synchronous. |
-| `CRACKPAY_ORIGINS` | `readonly string[]` | Hosts trusted by default: `["https://crackpay.vercel.app"]`. |
-| `arcTestnet` | object | `{ id: 5042002, hexId: "0x4cef52", name, rpcUrl, explorerUrl, faucetUrl }` |
-| `tokens` | object | `tokens.USDC`, `tokens.EURC`: `{ symbol, address, decimals: 6 }` |
+| `CRACKPAY_ORIGINS` | `readonly string[]` | Hosts trusted by default: `["https://www.crackpay.xyz", "https://crackpay.xyz", "https://crackpay.vercel.app"]`, all CrackPay on Arc mainnet. |
+| `arcTestnet` | object | `{ id: 5042002, hexId: "0x4cef52", name, rpcUrl, explorerUrl, faucetUrl, testnet: true }` |
+| `arcMainnet` | object | `{ id: 5042, hexId: "0x13b2", name: "Arc", rpcUrl, explorerUrl, faucetUrl: null, testnet: false }` |
+| `ARC_CHAINS` | array | `[arcMainnet, arcTestnet]` |
+| `getArcChain(chainId)` | `ArcChainInfo \| null` | The Arc network for a number or the hex string `eth_chainId` returns. |
+| `getTokens(chainId)` | object \| `null` | That network's `USDC` and `EURC`: `{ symbol, address, decimals: 6 }`. EURC's address differs by network. |
+| `tokensByChain` | object | The same, keyed by chain id. |
+| `tokens` | object | Deprecated: testnet only. Use `getTokens(chainId)`. |
 | `NATIVE_USDC_DECIMALS` | `18` | USDC's scale as a transaction `value` or from `eth_getBalance`. |
 | `ErrorCode` | object | `UserRejected` 4001, `Unauthorized` 4100, `UnsupportedMethod` 4200, `UnrecognizedChain` 4902, `InvalidParams` -32602, `Internal` -32603 |
 | `errorCode(error)` | `number \| undefined` | The code of an error, looking through one level of `cause` (viem and wagmi wrap errors). |
@@ -47,8 +52,9 @@ type CrackPayConnection = {
   provider: MiniAppProvider;
   account: Address;
   handle: string | null; // CrackPay handle without the "@"
-  walletClient: WalletClient; // chain: arcTestnet, transport: the CrackPay provider
-  publicClient: PublicClient; // chain: arcTestnet, transport: http(rpcUrl)
+  chain: ArcChainInfo; // arcMainnet or arcTestnet: whichever CrackPay the app is open in
+  walletClient: WalletClient; // chain: that network, transport: the CrackPay provider
+  publicClient: PublicClient; // chain: that network, transport: http(rpcUrl ?? chain.rpcUrl)
 };
 ```
 
@@ -72,8 +78,8 @@ type CrackPayState =
 | Method | Result |
 |---|---|
 | `eth_requestAccounts`, `eth_accounts` | `[account]`. Never prompts. |
-| `eth_chainId` | `"0x4cef52"` |
-| `net_version` | `"5042002"` |
+| `eth_chainId` | `"0x4cef52"` on testnet, `"0x13b2"` on mainnet |
+| `net_version` | `"5042002"` on testnet, `"5042"` on mainnet |
 | `wallet_switchEthereumChain` | `null` for Arc; error 4902 otherwise |
 | `wallet_addEthereumChain` | `null` for Arc; error 4200 otherwise |
 | `eth_sendTransaction` | The transaction hash, once final |

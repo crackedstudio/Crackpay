@@ -1,13 +1,13 @@
 "use client";
 
 import { ActivityList } from "@/components/ActivityList";
-import { RequireAccount } from "@/components/RequireAccount";
+import { RequireSignedIn } from "@/components/RequireAccount";
 import { TabBar } from "@/components/TabBar";
 import { LinkButton, Screen } from "@/components/ui";
 
 export default function Activity() {
   return (
-    <RequireAccount>
+    <RequireSignedIn>
       {(account) => (
         <>
           <Screen title="Activity" inset>
@@ -27,6 +27,6 @@ export default function Activity() {
           <TabBar />
         </>
       )}
-    </RequireAccount>
+    </RequireSignedIn>
   );
 }

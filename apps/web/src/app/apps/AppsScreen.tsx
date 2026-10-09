@@ -1,7 +1,7 @@
 "use client";
 
 import { MiniAppList } from "@/components/MiniAppList";
-import { RequireAccount } from "@/components/RequireAccount";
+import { RequireSignedIn } from "@/components/RequireAccount";
 import { TabBar } from "@/components/TabBar";
 import { Grid } from "@/components/icons";
 import { EmptyState, Screen, Skeleton } from "@/components/ui";
@@ -10,7 +10,7 @@ import { useMiniApps } from "@/lib/miniapp/use-miniapps";
 export function AppsScreen() {
   const { apps, failed } = useMiniApps();
   return (
-    <RequireAccount>
+    <RequireSignedIn>
       {() => (
         <>
           <Screen title="Apps" inset>
@@ -39,6 +39,6 @@ export function AppsScreen() {
           <TabBar />
         </>
       )}
-    </RequireAccount>
+    </RequireSignedIn>
   );
 }

@@ -1,16 +1,15 @@
 import { isAddressEqual, zeroAddress, type Address } from "viem";
-import { contracts } from "../config/contracts";
 import { ONBOARDING_MODE } from "../config/onboarding";
 import { identityRegistryAbi } from "../config/identity";
 import { InvalidRecipientError, parseRecipient } from "./address";
 import { api, ApiClientError } from "./api";
-import { arcChain, publicClient } from "./arc";
+import { arcContracts, publicClient } from "./arc";
 import { shortAddress } from "./format";
 import { isValidHandle, normalizeHandle } from "./handle";
 
 export type Recipient = { address: Address; label: string };
 
-const registry = { address: contracts[arcChain.id].identityRegistry, abi: identityRegistryAbi } as const;
+const registry = { address: arcContracts.identityRegistry, abi: identityRegistryAbi } as const;
 
 export type RecipientKind = "address" | "phone" | "handle";
 

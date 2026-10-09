@@ -1,7 +1,6 @@
 import { isAddress, isAddressEqual, type Address, type Hash } from "viem";
-import { contracts } from "../config/contracts";
 import { identityRegistryAbi } from "../config/identity";
-import { arcChain, publicClient } from "./arc";
+import { arcChain, arcContracts, publicClient } from "./arc";
 
 export type ActivityItem = {
   id: string;
@@ -52,7 +51,7 @@ export async function fetchActivity(account: Address, limit = 25): Promise<Activ
       transactionHash: ("0x" + id.repeat(64)).slice(0, 66) as Hash,
     }));
   }
-  const usdc = contracts[arcChain.id].usdc;
+  const usdc = arcContracts.usdc;
   const url = `${arcChain.blockExplorers.default.apiUrl}/addresses/${account}/token-transfers?type=ERC-20&token=${usdc}`;
   const response = await fetch(url);
   // The explorer answers 404 for an address it has never seen.
@@ -91,7 +90,7 @@ async function lookUpHandles(addresses: Address[]): Promise<Map<Address, string>
   try {
     const results = await publicClient.multicall({
       contracts: addresses.map((address) => ({
-        address: contracts[arcChain.id].identityRegistry,
+        address: arcContracts.identityRegistry,
         abi: identityRegistryAbi,
         functionName: "reverse" as const,
         args: [address] as const,

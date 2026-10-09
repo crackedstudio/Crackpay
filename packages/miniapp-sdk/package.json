@@ -1,6 +1,6 @@
 {
   "name": "@crackpay/miniapp-sdk",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "Build Mini Apps that run inside CrackPay, the USD stablecoin wallet on Arc.",
   "license": "MIT",
   "type": "module",

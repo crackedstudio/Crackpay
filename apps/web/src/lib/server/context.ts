@@ -1,10 +1,10 @@
 import { privateKeyToAccount } from "viem/accounts";
 import type { Hex } from "viem";
-import { contracts } from "../../config/contracts";
 import { DEFAULT_MINI_APPS } from "../../config/miniapps";
 import { ONBOARDING_MODE } from "../../config/onboarding";
 import { identityRegistryAbi } from "../../config/identity";
-import { arcChain, publicClient } from "../arc";
+import { arcChain, arcContracts, publicClient } from "../arc";
+import { CURRENT_NETWORK } from "../miniapp/registry";
 import { ServerConfigError, requireEnv } from "./errors";
 import type { IdentityDeps } from "./identity-service";
 import { consoleSms, type CodeVerifier } from "./sms";
@@ -20,7 +20,7 @@ const globals = globalThis as { crackpayDeps?: IdentityDeps; crackpayStore?: Sto
 function createStore(): Store {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (url && key) return new SupabaseStore(url, key);
+  if (url && key) return new SupabaseStore(url, key, CURRENT_NETWORK);
   if (isProduction) throw new ServerConfigError("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are not set");
   console.warn("[crackpay] Supabase is not configured: using an in-memory store that is lost on restart.");
   return new MemoryStore(Date.now, DEFAULT_MINI_APPS);
@@ -54,7 +54,7 @@ export function identityDeps(): IdentityDeps {
   if (globals.crackpayDeps) return globals.crackpayDeps;
 
   const signerKey = requireEnv("ATTESTATION_SIGNER_KEY");
-  const registryAddress = contracts[arcChain.id].identityRegistry;
+  const registryAddress = arcContracts.identityRegistry;
   const read = { address: registryAddress, abi: identityRegistryAbi } as const;
 
   globals.crackpayDeps = {

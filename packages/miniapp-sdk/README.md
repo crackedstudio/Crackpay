@@ -38,13 +38,16 @@ CrackPay and with `null` anywhere else. It never prompts.
 
 ```ts
 import { connectCrackPay } from "@crackpay/miniapp-sdk/viem";
-import { tokens } from "@crackpay/miniapp-sdk";
+import { getTokens } from "@crackpay/miniapp-sdk";
 import { erc20Abi, formatUnits, parseEther } from "viem";
 
 const crackpay = await connectCrackPay();
 if (!crackpay) throw new Error("Open this app in CrackPay.");
-const { account, handle, walletClient, publicClient } = crackpay;
-console.log(handle ? `Hi @${handle}` : "Hi there");
+const { account, handle, chain, walletClient, publicClient } = crackpay;
+console.log(handle ? `Hi @${handle}` : "Hi there", "on", chain.name);
+
+// Mainnet and testnet use different token addresses; look them up per chain.
+const tokens = getTokens(chain.id)!;
 
 const balance = await publicClient.readContract({
   address: tokens.USDC.address,
@@ -94,6 +97,18 @@ try {
 }
 ```
 
+## Mainnet and testnet
+
+CrackPay runs on Arc mainnet (chain `5042`, real USDC) and on Arc Testnet
+(chain `5042002`, test USDC). Each CrackPay is on one network, and your app runs
+on whichever opened it. Never hardcode the chain:
+
+- `connectCrackPay()` returns `chain` and builds its viem clients for it.
+- With the bare provider, call `eth_chainId` and pass it to `getArcChain()`.
+- `getTokens(chainId)` gives that network's USDC and EURC. The old `tokens`
+  export is testnet only.
+- Your contracts must be deployed, and listed, on each network you support.
+
 ## What to know before you build
 
 - **Connect on load.** Never show a "Connect wallet" button.
@@ -103,7 +118,8 @@ try {
 - **USDC has two scales.** 6 decimals through its token contract, 18 as a
   transaction `value`. They are the same balance.
 - **One call per transaction.**
-- **Your server must allow framing** by `https://crackpay.vercel.app`.
+- **Your server must allow framing** by every host in `CRACKPAY_ORIGINS`:
+  `https://www.crackpay.xyz`, `https://crackpay.xyz` and `https://crackpay.vercel.app`.
 
 ## Testing
 

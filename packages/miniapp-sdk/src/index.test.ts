@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CRACKPAY_ORIGINS, ErrorCode, arcTestnet, errorCode, getCrackPayProvider, isFramed, isUserRejection, tokens } from "./index.js";
+import {
+  CRACKPAY_ORIGINS,
+  ErrorCode,
+  arcMainnet,
+  arcTestnet,
+  errorCode,
+  getArcChain,
+  getCrackPayProvider,
+  getTokens,
+  isFramed,
+  isUserRejection,
+  tokens,
+} from "./index.js";
 
 describe("outside a browser", () => {
   it("resolves to null and reports not framed, without throwing", async () => {
@@ -15,6 +27,25 @@ describe("constants", () => {
     expect(tokens.USDC.decimals).toBe(6);
     expect(tokens.EURC.decimals).toBe(6);
     for (const origin of CRACKPAY_ORIGINS) expect(new URL(origin).origin).toBe(origin);
+  });
+
+  it("describe Arc mainnet consistently", () => {
+    expect(arcMainnet.id).toBe(5042);
+    expect(Number(arcMainnet.hexId)).toBe(arcMainnet.id);
+  });
+
+  it("look a chain up by number or by the hex eth_chainId returns", () => {
+    expect(getArcChain(5042)).toBe(arcMainnet);
+    expect(getArcChain("0x13b2")).toBe(arcMainnet);
+    expect(getArcChain("0x4cef52")).toBe(arcTestnet);
+    expect(getArcChain(1)).toBeNull();
+  });
+
+  it("give each network its own EURC, and the same USDC", () => {
+    expect(getTokens(arcTestnet.id)?.EURC.address).toBe(tokens.EURC.address);
+    expect(getTokens(arcMainnet.id)?.EURC.address).toBe("0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1");
+    expect(getTokens(arcMainnet.id)?.USDC.address).toBe(getTokens(arcTestnet.id)?.USDC.address);
+    expect(getTokens(1)).toBeNull();
   });
 });
 
@@ -49,7 +80,7 @@ describe("inside CrackPay", () => {
   });
 
   /** A framed page whose parent behaves like the CrackPay host. */
-  function frame(hostOrigin: string) {
+  function frame(hostOrigin: string, chainId = "0x4cef52") {
     const listeners = new Set<(event: unknown) => void>();
     const parent = {
       postMessage(message: { type: string; id?: number; method?: string }, targetOrigin: string) {
@@ -61,11 +92,11 @@ describe("inside CrackPay", () => {
               listener({ source: parent, origin: hostOrigin, data: { protocol: "crackpay-miniapp", version: 1, ...data } });
             }
           });
-        if (message.type === "hello") reply({ type: "ready", chainId: "0x4cef52", accounts: [ACCOUNT] });
+        if (message.type === "hello") reply({ type: "ready", chainId, accounts: [ACCOUNT] });
         if (message.type === "request") {
           const results: Record<string, unknown> = {
             eth_requestAccounts: [ACCOUNT],
-            eth_chainId: "0x4cef52",
+            eth_chainId: chainId,
             crackpay_getProfile: { account: ACCOUNT, handle: "alice" },
           };
           const result = results[message.method ?? ""] ?? null;
@@ -93,7 +124,18 @@ describe("inside CrackPay", () => {
     expect(connection?.handle).toBe("alice");
     expect(connection?.provider.isCrackPay).toBe(true);
     expect(connection?.walletClient.chain?.id).toBe(5042002);
+    expect(connection?.chain).toEqual(arcTestnet);
     expect(window.ethereum).toBe(connection?.provider);
+  });
+
+  it("follows CrackPay onto Arc mainnet", async () => {
+    frame(HOST, "0x13b2");
+    const { connectCrackPay } = await import("./viem.js");
+
+    const connection = await connectCrackPay();
+    expect(connection?.chain).toEqual(arcMainnet);
+    expect(connection?.walletClient.chain?.id).toBe(5042);
+    expect(connection?.publicClient.chain?.rpcUrls.default.http[0]).toBe(arcMainnet.rpcUrl);
   });
 
   it("reports the user's handle, and null when they have none", async () => {

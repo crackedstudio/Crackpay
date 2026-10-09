@@ -8,8 +8,15 @@ export {
   type MiniAppProvider,
 } from "./provider.js";
 
-/** CrackPay hosts a Mini App may trust. Testnet today; the production domain will be added here. */
-export const CRACKPAY_ORIGINS: readonly string[] = ["https://crackpay.vercel.app"];
+/**
+ * CrackPay hosts a Mini App may trust. www.crackpay.xyz is CrackPay on Arc
+ * mainnet (crackpay.xyz redirects there); crackpay.vercel.app serves the same app.
+ */
+export const CRACKPAY_ORIGINS: readonly string[] = [
+  "https://www.crackpay.xyz",
+  "https://crackpay.xyz",
+  "https://crackpay.vercel.app",
+];
 
 export type CrackPayOptions = {
   /**
@@ -38,7 +45,10 @@ export function isFramed(): boolean {
   return typeof window !== "undefined" && window.parent !== window;
 }
 
-/** The network CrackPay runs on. */
+/**
+ * Arc Testnet. Test USDC from the faucet; build and review your app here first.
+ * Endpoints: https://docs.arc.io/arc/references/connect-to-arc
+ */
 export const arcTestnet = {
   id: 5042002,
   hexId: "0x4cef52",
@@ -46,17 +56,65 @@ export const arcTestnet = {
   rpcUrl: "https://rpc.testnet.arc.network",
   explorerUrl: "https://explorer.testnet.arc.io",
   faucetUrl: "https://faucet.circle.com",
+  testnet: true,
 } as const;
 
-/**
- * Tokens on Arc Testnet, through their ERC-20 interfaces. USDC is also Arc's
- * native gas token: the same balance, with 18 decimals when sent as a
- * transaction `value`. Use 6 for every token call and for display.
- */
-export const tokens = {
-  USDC: { symbol: "USDC", address: "0x3600000000000000000000000000000000000000", decimals: 6 },
-  EURC: { symbol: "EURC", address: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", decimals: 6 },
+/** Arc mainnet. Real USDC. */
+export const arcMainnet = {
+  id: 5042,
+  hexId: "0x13b2",
+  name: "Arc",
+  rpcUrl: "https://rpc.mainnet.arc.io",
+  explorerUrl: "https://explorer.arc.io",
+  faucetUrl: null,
+  testnet: false,
 } as const;
+
+/** The networks CrackPay runs on. Each CrackPay deployment is on exactly one. */
+export const ARC_CHAINS = [arcMainnet, arcTestnet] as const;
+
+export type ArcChainInfo = (typeof ARC_CHAINS)[number];
+
+/**
+ * The Arc network for a chain id, as a number or the hex string `eth_chainId`
+ * returns. Null for any other chain.
+ */
+export function getArcChain(chainId: number | string): ArcChainInfo | null {
+  const id = typeof chainId === "string" ? Number.parseInt(chainId, chainId.startsWith("0x") ? 16 : 10) : chainId;
+  return ARC_CHAINS.find((chain) => chain.id === id) ?? null;
+}
+
+type Token = { symbol: "USDC" | "EURC"; address: `0x${string}`; decimals: 6 };
+
+/**
+ * Tokens on each Arc network, through their ERC-20 interfaces. USDC is also
+ * Arc's native gas token: the same balance, with 18 decimals when sent as a
+ * transaction `value`. Use 6 for every token call and for display.
+ * Source: https://docs.arc.io/arc/references/contract-addresses
+ */
+export const tokensByChain = {
+  [arcTestnet.id]: {
+    USDC: { symbol: "USDC", address: "0x3600000000000000000000000000000000000000", decimals: 6 },
+    EURC: { symbol: "EURC", address: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a", decimals: 6 },
+  },
+  [arcMainnet.id]: {
+    USDC: { symbol: "USDC", address: "0x3600000000000000000000000000000000000000", decimals: 6 },
+    EURC: { symbol: "EURC", address: "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1", decimals: 6 },
+  },
+} as const satisfies Record<number, Record<"USDC" | "EURC", Token>>;
+
+/**
+ * The tokens on the network your app is running on. Read the chain from the
+ * provider (`eth_chainId`) or from `connectCrackPay`, never assume it: EURC's
+ * address differs between mainnet and testnet.
+ */
+export function getTokens(chainId: number | string) {
+  const chain = getArcChain(chainId);
+  return chain ? tokensByChain[chain.id] : null;
+}
+
+/** @deprecated Testnet only. Use `getTokens(chainId)`, which also covers mainnet. */
+export const tokens = tokensByChain[arcTestnet.id];
 
 /** Decimals of USDC when it is the `value` of a transaction or the result of `eth_getBalance`. */
 export const NATIVE_USDC_DECIMALS = 18;
@@ -68,7 +126,7 @@ export const ErrorCode = {
   /** The call is not allowed for this app: a contract outside its listing, or a forbidden token call. */
   Unauthorized: 4100,
   UnsupportedMethod: 4200,
-  /** Only Arc is available. */
+  /** Only the Arc network this CrackPay runs on is available. */
   UnrecognizedChain: 4902,
   InvalidParams: -32602,
   /** The call reverted, was never confirmed, or something failed inside CrackPay. */

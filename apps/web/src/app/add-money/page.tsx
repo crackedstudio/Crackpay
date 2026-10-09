@@ -3,12 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { CopyRow } from "@/components/CopyRow";
 import { PayTicket, payLink } from "@/components/PayTicket";
-import { RequireAccount } from "@/components/RequireAccount";
+import { RequireSignedIn } from "@/components/RequireAccount";
 import { ChevronRight, External, Link as LinkIcon, Share, Wallet } from "@/components/icons";
 import { Button, Card, ErrorText, Label, ListRow, Screen, TextField } from "@/components/ui";
 import { arcChain } from "@/lib/arc";
 import { shortAddress } from "@/lib/format";
-import { KASHLINK_APP_ID, kashLinkAppUrl, kashLinkProblem, parseKashLink } from "@/lib/kashlink";
+import { KASHLINK_APP_ID, kashLinkAppUrl, kashLinkExample, kashLinkProblem, parseKashLink } from "@/lib/kashlink";
 import { useMiniApp } from "@/lib/miniapp/use-miniapps";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
 
@@ -36,7 +36,7 @@ function OpenKashLink() {
         autoCapitalize="none"
         autoCorrect="off"
         spellCheck={false}
-        placeholder="https://testnet.kashlink.live/#…"
+        placeholder={`${kashLinkExample()}/#…`}
         value={link}
         status={error ? "error" : undefined}
         onChange={(event) => {
@@ -52,7 +52,7 @@ function OpenKashLink() {
   );
 }
 
-function AddMoney({ account, handle }: { account: CrackPaySmartAccount; handle: string }) {
+function AddMoney({ account, handle }: { account: CrackPaySmartAccount; handle: string | null }) {
   const kashlink = useMiniApp(KASHLINK_APP_ID);
   const [claiming, setClaiming] = useState(false);
 
@@ -60,21 +60,25 @@ function AddMoney({ account, handle }: { account: CrackPaySmartAccount; handle: 
     <Screen title="Deposit" back="/">
       <p className="text-muted">Dollars arrive in your account in about a second, with no fees.</p>
 
-      {/* Being paid in person is the quickest deposit, so the code comes first. */}
-      <section className="flex flex-col gap-3">
-        <Label>From someone on CrackPay</Label>
-        <PayTicket handle={handle} link={payLink(handle)} />
-        <p className="text-center text-sm text-muted">Scan with any phone camera to pay @{handle}</p>
-        <Card>
-          <ListRow
-            label={<span className="text-base font-bold text-foreground">Share my payment link</span>}
-            value={<span className="text-sm font-normal text-muted">Or copy your handle and link.</span>}
-            icon={<Share className="h-5 w-5" />}
-            href="/receive"
-            trailing={<ChevronRight className="h-5 w-5 text-muted" />}
-          />
-        </Card>
-      </section>
+      {/* Being paid in person is the quickest deposit, so the code comes first.
+          Without a registered handle there is no pay-me link yet: the account
+          address below is how this account gets its first dollars. */}
+      {handle && (
+        <section className="flex flex-col gap-3">
+          <Label>From someone on CrackPay</Label>
+          <PayTicket handle={handle} link={payLink(handle)} />
+          <p className="text-center text-sm text-muted">Scan with any phone camera to pay @{handle}</p>
+          <Card>
+            <ListRow
+              label={<span className="text-base font-bold text-foreground">Share my payment link</span>}
+              value={<span className="text-sm font-normal text-muted">Or copy your handle and link.</span>}
+              icon={<Share className="h-5 w-5" />}
+              href="/receive"
+              trailing={<ChevronRight className="h-5 w-5 text-muted" />}
+            />
+          </Card>
+        </section>
+      )}
 
       {kashlink.status === "ready" && (
         <section className="flex flex-col gap-2">
@@ -139,5 +143,5 @@ function AddMoney({ account, handle }: { account: CrackPaySmartAccount; handle: 
 }
 
 export default function AddMoneyPage() {
-  return <RequireAccount>{(account, handle) => <AddMoney account={account} handle={handle} />}</RequireAccount>;
+  return <RequireSignedIn>{(account, handle) => <AddMoney account={account} handle={handle} />}</RequireSignedIn>;
 }

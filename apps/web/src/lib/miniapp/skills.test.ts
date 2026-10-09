@@ -33,8 +33,11 @@ describe("developer skills", () => {
     expect(facts).toContain(contracts[arcChain.id].usdc);
     expect(facts).toContain(contracts[arcChain.id].eurc);
 
-    // No skill may mention an address that is not one of these.
-    const known = [contracts[arcChain.id].usdc, contracts[arcChain.id].eurc].map((a) => a.toLowerCase());
+    // No skill may mention an address that is not a token on one of the Arc networks.
+    const known = Object.values(contracts)
+      .flatMap((set) => [set.usdc, set.eurc])
+      .map((a) => a.toLowerCase());
+    for (const set of Object.values(contracts)) expect(facts).toContain(set.eurc);
     for (const name of names) {
       const addresses = skill(name).match(/0x[0-9a-fA-F]{40}/g) ?? [];
       for (const address of addresses) expect(known, `${name}: ${address}`).toContain(address.toLowerCase());

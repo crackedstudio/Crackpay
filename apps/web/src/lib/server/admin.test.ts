@@ -75,6 +75,13 @@ describe("saveMiniAppFromInput", () => {
     expect(await store.listMiniApps()).toHaveLength(1);
   });
 
+  it("only lists apps for the network this CrackPay runs on", async () => {
+    expect(await code(saveMiniAppFromInput(store, { ...app, network: "arc-mainnet" }))).toBe("invalid_miniapp");
+    expect(await store.getMiniApp("kashlink")).toBeNull();
+    const seeded = new MemoryStore(Date.now, [{ ...app, network: "arc-mainnet", icon: null } as never]);
+    expect(await seeded.listMiniApps()).toEqual([]);
+  });
+
   it("stores nothing when the input is invalid", async () => {
     expect(await code(saveMiniAppFromInput(store, { ...app, url: "http://insecure.example" }))).toBe("invalid_miniapp");
     expect(await store.listMiniApps()).toEqual([]);

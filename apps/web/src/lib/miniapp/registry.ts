@@ -1,6 +1,6 @@
 import { isAddress, isAddressEqual, type Address } from "viem";
-import { arcTestnet } from "viem/chains";
-import { contracts } from "../../config/contracts";
+import { IS_MAINNET } from "../../config/network";
+import { arcContracts } from "../arc";
 import type { MiniApp } from "../../config/miniapps";
 import { LISTING_CATEGORIES, LISTING_NETWORKS, LISTING_TOKENS } from "./listing";
 
@@ -27,7 +27,7 @@ export type MiniAppRecord = {
 };
 
 /** The network this deployment of CrackPay runs on. */
-export const CURRENT_NETWORK: MiniAppRecord["network"] = "arc-testnet";
+export const CURRENT_NETWORK: MiniAppRecord["network"] = IS_MAINNET ? "arc-mainnet" : "arc-testnet";
 
 /** A problem with one field, phrased for the admin filling in the form. */
 export class RegistryInputError extends Error {
@@ -125,8 +125,8 @@ export function parseMiniAppInput(input: unknown): MiniAppRecord {
 }
 
 const tokenAddresses = {
-  USDC: contracts[arcTestnet.id].usdc,
-  EURC: contracts[arcTestnet.id].eurc,
+  USDC: arcContracts.usdc,
+  EURC: arcContracts.eurc,
 } as const;
 
 /** The form the wallet uses: a record plus the policy the bridge enforces. */

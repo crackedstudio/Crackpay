@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
 import { errorText } from "@/lib/format";
 import { LISTING_CATEGORIES, LISTING_NETWORKS, LISTING_TOKENS } from "@/lib/miniapp/listing";
-import type { MiniAppRecord } from "@/lib/miniapp/registry";
+import { CURRENT_NETWORK, type MiniAppRecord } from "@/lib/miniapp/registry";
 import { AdminButton, Field, Notice, inputClass } from "./ui";
 
 type Draft = Omit<MiniAppRecord, "icon" | "contracts" | "sortOrder"> & {
@@ -22,7 +22,7 @@ export const EMPTY_DRAFT: Draft = {
   category: "finance",
   url: "",
   icon: "",
-  network: "arc-testnet",
+  network: CURRENT_NETWORK,
   contracts: [],
   tokenApprovals: [],
   enabled: false,
