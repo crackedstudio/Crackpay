@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ActivityList } from "@/components/ActivityList";
 import { Avatar } from "@/components/Avatar";
+import { ClaimHandle } from "@/components/ClaimHandle";
 import { Mark } from "@/components/Brand";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { TabBar } from "@/components/TabBar";
@@ -13,9 +14,10 @@ import { IconButton, Label, LinkButton, Screen, ScreenSkeleton, Skeleton } from 
 import { useWallet } from "@/components/WalletProvider";
 import { ONBOARDING_MODE } from "@/config/onboarding";
 import { useUsdcBalance } from "@/lib/balance";
-import { dollars } from "@/lib/format";
+import { dollars, shortAddress } from "@/lib/format";
 import { HIDDEN_AMOUNT, setAmountsHidden, useAmountsHidden } from "@/lib/privacy";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
+import { FREE_FEES_PAUSED } from "@/config/fees";
 
 /**
  * Three promises, in the order a first-time visitor cares about them. They are
@@ -23,7 +25,7 @@ import type { CrackPaySmartAccount } from "@/lib/wallet";
  * screen is the one button that says go.
  */
 const promises = [
-  "Payments land in a second, and sending is free.",
+  FREE_FEES_PAUSED ? "Payments land in a second, for about a cent." : "Payments land in a second, and sending is free.",
   "Your face or fingerprint approves every payment.",
   "No seed phrase to write down or lose.",
 ] as const;
@@ -70,7 +72,16 @@ function Welcome() {
 /** A million dollars is the point where the figure has to give way to the column. */
 const MILLION = 1_000_000_000_000n;
 
-function Home({ account, handle }: { account: CrackPaySmartAccount; handle: string }) {
+/** `handle` is null while it is chosen but not registered; `pendingHandle` is the chosen one. */
+function Home({
+  account,
+  handle,
+  pendingHandle,
+}: {
+  account: CrackPaySmartAccount;
+  handle: string | null;
+  pendingHandle: string | null;
+}) {
   const { balance, refresh } = useUsdcBalance(account.address);
   const hidden = useAmountsHidden();
 
@@ -81,8 +92,8 @@ function Home({ account, handle }: { account: CrackPaySmartAccount; handle: stri
         footerRule
         lead={
           <Link href="/settings" className="pressable flex items-center gap-2.5">
-            <Avatar seed={handle} size="sm" />
-            <span className="font-semibold">@{handle}</span>
+            <Avatar seed={handle ?? account.address} size="sm" />
+            <span className="font-semibold">{handle ? `@${handle}` : shortAddress(account.address)}</span>
           </Link>
         }
         action={
@@ -131,7 +142,9 @@ function Home({ account, handle }: { account: CrackPaySmartAccount; handle: stri
           )}
         </div>
 
-        {balance === 0n && (
+        {!handle && pendingHandle && <ClaimHandle account={account} handle={pendingHandle} balance={balance} />}
+
+        {handle && balance === 0n && (
           <div className="flex flex-col gap-3 rounded-lg border-[1.5px] border-dashed border-ink p-4.5">
             <div className="flex flex-col gap-1">
               <p className="text-[1.0625rem] font-bold">Add your first dollars</p>
@@ -166,7 +179,9 @@ function Home({ account, handle }: { account: CrackPaySmartAccount; handle: stri
 export default function Start() {
   const wallet = useWallet();
   const router = useRouter();
-  const needsOnboarding = wallet.status === "ready" && !wallet.handle;
+  // A handle chosen but not yet registered is not unfinished onboarding: home
+  // offers to claim it.
+  const needsOnboarding = wallet.status === "ready" && !wallet.handle && !wallet.pendingHandle;
 
   useEffect(() => {
     // A passkey exists but registration never finished: pick up where it stopped.
@@ -175,5 +190,5 @@ export default function Start() {
 
   if (wallet.status === "loading" || needsOnboarding) return <ScreenSkeleton />;
   if (wallet.status === "signed-out") return <Welcome />;
-  return <Home account={wallet.account} handle={wallet.handle ?? ""} />;
+  return <Home account={wallet.account} handle={wallet.handle} pendingHandle={wallet.pendingHandle} />;
 }

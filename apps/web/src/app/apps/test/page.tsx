@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useSyncExternalStore } from "react";
 import { MiniAppHost } from "@/components/MiniAppHost";
-import { RequireAccount } from "@/components/RequireAccount";
+import { RequireSignedIn } from "@/components/RequireAccount";
 import { Screen } from "@/components/ui";
 import { testMiniApp, testUrlProblem } from "@/config/miniapps";
 import { developer } from "@/lib/developer";
@@ -12,7 +12,7 @@ import type { CrackPaySmartAccount } from "@/lib/wallet";
 
 const subscribe = () => () => {};
 
-function TestApp({ account, handle }: { account: CrackPaySmartAccount; handle: string }) {
+function TestApp({ account, handle }: { account: CrackPaySmartAccount; handle: string | null }) {
   const url = useSearchParams().get("url") ?? "";
   // False on the server and during hydration, then the stored setting.
   const enabled = useSyncExternalStore(subscribe, developer.isEnabled, () => false);
@@ -40,13 +40,13 @@ function TestApp({ account, handle }: { account: CrackPaySmartAccount; handle: s
 
 export default function TestAppPage() {
   return (
-    <RequireAccount>
+    <RequireSignedIn>
       {(account, handle) => (
         // useSearchParams needs a Suspense boundary to prerender.
         <Suspense>
           <TestApp account={account} handle={handle} />
         </Suspense>
       )}
-    </RequireAccount>
+    </RequireSignedIn>
   );
 }

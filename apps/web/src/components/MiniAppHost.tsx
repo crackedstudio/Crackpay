@@ -16,10 +16,11 @@ import { checkTransaction, type TransactionSummary } from "@/lib/miniapp/policy"
 import { rememberApp } from "@/lib/miniapp/recent";
 import { envelope, isMiniAppMessage, type MiniAppMessage } from "@/lib/miniapp/sdk";
 import { formatAmountExact, nativeToBaseCeil } from "@/lib/money";
-import { sendSponsoredUserOp } from "@/lib/userop";
+import { sendUserOp } from "@/lib/userop";
 import type { Address } from "viem";
 import type { CrackPaySmartAccount } from "@/lib/wallet";
 import type { MiniApp } from "@/config/miniapps";
+import { FREE_FEES_PAUSED, NETWORK_FEE } from "@/config/fees";
 
 type Pending = { summary: TransactionSummary; resolve: (approved: boolean) => void };
 /** The last word CrackPay gets after money moves, before the app has the screen back. */
@@ -225,7 +226,11 @@ export function MiniAppHost({
       async send(tx: Parameters<typeof checkTransaction>[1]) {
         setSending(true);
         try {
-          const result = await sendSponsoredUserOp(account, [tx]);
+          // A USDC transfer draws on the same balance a self-paid fee comes from.
+          // (Native `value` is counted by sendUserOp from the call itself.)
+          const summary = checkTransaction(app.policy, tx);
+          const spend = summary.kind === "transfer" && summary.token.symbol === "USDC" ? summary.amount : 0n;
+          const result = await sendUserOp(account, [tx], spend);
           if (result.status === "submitted_no_receipt") {
             throw new RpcError(-32603, `Operation ${result.userOpHash} was submitted but never confirmed`);
           }
@@ -423,7 +428,7 @@ export function MiniAppHost({
               <External className="h-4 w-4 shrink-0 text-muted" />
             </a>
             {handle && <Fact label="Paying as" value={`@${handle}`} />}
-            <Fact label="Network fee" value="Free" tone="money" />
+            <Fact label="Network fee" value={NETWORK_FEE} tone={FREE_FEES_PAUSED ? undefined : "money"} />
           </div>
 
           <ul className="flex flex-col gap-2 text-sm">
@@ -485,7 +490,7 @@ export function MiniAppHost({
           </div>
 
           <div className="divide-y divide-hair overflow-hidden rounded-lg border-[1.5px] border-ink">
-            <Fact label="Network fee" value="Free" tone="money" />
+            <Fact label="Network fee" value={NETWORK_FEE} tone={FREE_FEES_PAUSED ? undefined : "money"} />
             {balance !== null && <Fact label="Your balance" value={dollars(balance)} />}
             {balance !== null && leaving !== null && !short && (
               <Fact label="Left after" value={dollars(balance - leaving)} />

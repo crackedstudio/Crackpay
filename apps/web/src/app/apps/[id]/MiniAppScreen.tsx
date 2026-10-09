@@ -1,7 +1,7 @@
 "use client";
 
 import { MiniAppHost } from "@/components/MiniAppHost";
-import { RequireAccount } from "@/components/RequireAccount";
+import { RequireSignedIn } from "@/components/RequireAccount";
 import { Grid } from "@/components/icons";
 import { EmptyState, LinkButton, Screen, ScreenSkeleton } from "@/components/ui";
 import { useMiniApp } from "@/lib/miniapp/use-miniapps";
@@ -36,6 +36,6 @@ export function MiniAppScreen({ id }: { id: string }) {
 
   const { app } = lookup;
   return (
-    <RequireAccount>{(account, handle) => <MiniAppHost app={app} account={account} handle={handle} />}</RequireAccount>
+    <RequireSignedIn>{(account, handle) => <MiniAppHost app={app} account={account} handle={handle} />}</RequireSignedIn>
   );
 }
