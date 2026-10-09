@@ -5,10 +5,11 @@
  * This site never calls WebAuthn — passkeys are created and used only in the
  * app — so the site's own domain carries no constraint and can move freely.
  * The app's cannot: whatever origin serves `NEXT_PUBLIC_APP_URL` is where
- * credentials bind, and changing it later locks every user out. No trailing
- * slash; locally it is port 3000.
+ * credentials bind, and changing it later locks every user out. The app is
+ * served from crackpay.xyz, which is therefore the passkey domain and the
+ * default here; `.env.local` points it at port 3000 for local work.
  */
-const base = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+const base = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crackpay.xyz").replace(/\/$/, "");
 
 export const APP = {
   home: base,
@@ -31,7 +32,7 @@ const ONBOARDING_MODE: "phone" | "passkey" =
 export const RETURNING = ONBOARDING_MODE === "phone" ? APP.onboarding : APP.signin;
 
 /**
- * The developer documentation is its own deployment on its own domain, so
+ * The developer documentation is its own deployment on docs.crackpay.xyz, so
  * every link into it is absolute too. Paths below were checked against the
  * live site on 2026-10-09; its llms.txt is the index they came from.
  */

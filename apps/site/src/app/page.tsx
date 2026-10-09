@@ -58,7 +58,7 @@ const steps = [
   },
   {
     title: "Get your first dollars",
-    body: "Someone pays you, you claim a KashLink you were sent, or you move dollars in from another app.",
+    body: "Someone pays you, you claim a KashLink you were sent, or you move dollars in from another wallet or exchange.",
   },
   {
     title: "Pay anyone",
@@ -80,7 +80,7 @@ const features = [
   {
     Icon: LinkIcon,
     title: "Send as a link",
-    body: "KashLink hands money to someone who is not on CrackPay yet. Opening the link sets up their account.",
+    body: "KashLink sends money as a link, for someone who is not on CrackPay yet. One sent to you claims straight into your account.",
   },
   {
     Icon: Receipt,
@@ -116,7 +116,7 @@ const safety = [
   {
     Icon: Shield,
     title: "Nothing to write down",
-    body: "No seed phrase exists in CrackPay — not in setup, not in recovery. Nothing to screenshot and nothing to lose in a drawer.",
+    body: "No seed phrase exists in CrackPay, at any point. The key stays on your device and syncs with your phone account.",
   },
   {
     Icon: Mark,
@@ -339,8 +339,9 @@ export default function Landing() {
               ))}
             </div>
             <p className="max-w-[40rem] pt-2 text-sm text-muted">
-              Set up recovery when you open your account and it comes back on a new phone with your number and your
-              face. Signing out only removes the account from that browser — your money stays where it is.
+              There is no recovery step to set up. Your passkey syncs with your phone account, so your number and your
+              face sign you back in on a new phone. Signing out only removes the account from that browser — your money
+              stays where it is.
             </p>
           </div>
         </section>
