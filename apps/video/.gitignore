@@ -1,0 +1,2 @@
+# Rendered films and stills. They are build output: re-render with `pnpm render`.
+out/

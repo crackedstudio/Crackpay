@@ -5,6 +5,7 @@ import { RequireAccount } from "@/components/RequireAccount";
 import { Sheet } from "@/components/Sheet";
 import { ChevronRight, Info, Link as LinkIcon, X } from "@/components/icons";
 import { Button, Callout, Card, ListRow, Screen, SwitchRow, TextField } from "@/components/ui";
+import { DOCS } from "@/config/docs";
 import { ONBOARDING_MODE } from "@/config/onboarding";
 import { testMiniApp, testUrlProblem } from "@/config/miniapps";
 import { arcChain } from "@/lib/arc";
@@ -205,9 +206,9 @@ function DeveloperSettings({ account }: { account: CrackPaySmartAccount }) {
 
         <Callout tone="info">
           Test apps are not reviewed by CrackPay and can ask you to approve calls to any contract. Only load apps you are
-          building yourself. Developer docs:{" "}
-          <a className="font-medium underline" href="/developers">
-            crackpay.vercel.app/developers
+          building yourself. Full instructions:{" "}
+          <a className="font-medium underline" href={DOCS.testInCrackPay} target="_blank" rel="noreferrer">
+            Test in CrackPay
           </a>
         </Callout>
 

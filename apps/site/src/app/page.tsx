@@ -11,7 +11,7 @@ import {
   Shield,
 } from "@crackpay/brand/icons";
 import type { ReactNode } from "react";
-import { APP, RETURNING } from "@/config/app";
+import { APP, DOCS, RETURNING } from "@/config/app";
 
 /*
  * The marketing page is the one screen in CrackPay that is read on a laptop, so
@@ -194,6 +194,9 @@ export default function Landing() {
       <header className={`${SHELL} flex items-center justify-between gap-4 py-5`}>
         <Wordmark />
         <nav className="flex items-center gap-5">
+          <a href={DOCS.home} className="hidden text-sm font-medium text-muted sm:block">
+            Docs
+          </a>
           <a href={APP.developers} className="hidden text-sm font-medium text-muted sm:block">
             Build Mini Apps
           </a>
@@ -359,9 +362,20 @@ export default function Landing() {
               <pre className="overflow-x-auto rounded-md border-[1.5px] border-ink bg-card p-4 font-mono text-xs">
                 npm install @crackpay/miniapp-sdk
               </pre>
-              <CtaLink href={APP.developers} variant="secondary" size="md">
+              <CtaLink href={DOCS.home} variant="secondary" size="md">
                 Read the docs
               </CtaLink>
+              <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm font-medium">
+                <a href={DOCS.quickStart} className="text-muted">
+                  Quick start
+                </a>
+                <a href={DOCS.skills} className="text-muted">
+                  AI skills
+                </a>
+                <a href={DOCS.submit} className="text-muted">
+                  Get listed
+                </a>
+              </div>
             </div>
           </div>
         </section>
@@ -401,6 +415,9 @@ export default function Landing() {
             </a>
             <a href={APP.developers} className="text-muted">
               Build Mini Apps
+            </a>
+            <a href={DOCS.home} className="text-muted">
+              Developer docs
             </a>
             <a href="https://github.com/crackedstudio/crackpay-skills" className="text-muted">
               CrackPay skills

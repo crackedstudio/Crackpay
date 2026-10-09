@@ -29,3 +29,17 @@ const ONBOARDING_MODE: "phone" | "passkey" =
   process.env.NEXT_PUBLIC_ONBOARDING_MODE === "passkey" ? "passkey" : "phone";
 
 export const RETURNING = ONBOARDING_MODE === "phone" ? APP.onboarding : APP.signin;
+
+/**
+ * The developer documentation is its own deployment on its own domain, so
+ * every link into it is absolute too. Paths below were checked against the
+ * live site on 2026-10-09; its llms.txt is the index they came from.
+ */
+const docs = (process.env.NEXT_PUBLIC_DOCS_URL ?? "https://docs.crackpay.xyz").replace(/\/$/, "");
+
+export const DOCS = {
+  home: docs,
+  quickStart: `${docs}/getting-started/quick-start`,
+  skills: `${docs}/ai/skills`,
+  submit: `${docs}/guides/submit-your-miniapp`,
+} as const;

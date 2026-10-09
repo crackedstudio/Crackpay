@@ -4,9 +4,22 @@
     {
       "name": "web",
       "runtimeExecutable": "/Users/0t41k1/Documents/Crackpay/apps/web/node_modules/.bin/next",
-      "runtimeArgs": ["dev"],
+      "runtimeArgs": [
+        "dev"
+      ],
       "cwd": "/Users/0t41k1/Documents/Crackpay/apps/web",
       "port": 3000
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "/Users/0t41k1/Documents/Crackpay/apps/site/node_modules/.bin/next",
+      "runtimeArgs": [
+        "dev",
+        "--port",
+        "3001"
+      ],
+      "cwd": "/Users/0t41k1/Documents/Crackpay/apps/site",
+      "port": 3001
     }
   ]
 }

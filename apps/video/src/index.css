@@ -1,0 +1,26 @@
+/*
+ * Tailwind, then the design system. `source(none)` turns off automatic file
+ * scanning and `@source` points it at this package only, so Tailwind does not
+ * walk the whole monorepo on every studio reload.
+ *
+ * Everything below this line is deliberately empty of colour, type and shadow
+ * values: they live in `packages/brand/tokens.css` and nowhere else.
+ */
+@import "tailwindcss" source(none);
+@import "@crackpay/brand/tokens.css";
+@source "./";
+
+/*
+ * The film is rendered on paper. Chrome renders light by default, so the dark
+ * half of the token sheet never applies, but pinning the scheme means a render
+ * cannot change colour because of the machine it ran on.
+ */
+:root {
+  color-scheme: light;
+}
+
+/*
+ * Remotion drives every animation from `useCurrentFrame()`, so the keyframes in
+ * the token sheet are unused here and the classes that trigger them must never
+ * be applied. The motion signature is ported frame-by-frame in `ui/motion.tsx`.
+ */
