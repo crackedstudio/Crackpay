@@ -59,12 +59,14 @@ const PRIORITY_FLOOR = parseGwei("1");
 type GasPriceTier = { maxFeePerGas: string; maxPriorityFeePerGas: string };
 
 /**
- * Fees for a userOp the account pays for itself. Circle's bundler quotes the
- * price it will accept (the `low` tier is enough to land in the next block on
- * Arc); if that quote is unavailable, Arc's node estimate is used instead. Both
- * are then clamped up to the floors above.
+ * Fees for every userOp, sponsored or not: the bundler applies its 1 gwei tip
+ * floor either way, and viem's default estimate comes from Arc's node, which
+ * tips about 1,000 wei. Circle's bundler quotes the price it will accept (the
+ * `low` tier is enough to land in the next block on Arc); if that quote is
+ * unavailable, Arc's node estimate is used instead. Both are then clamped up to
+ * the floors above.
  */
-async function selfPaidFees(bundler: ReturnType<typeof createArcBundlerClient>) {
+async function bundlerFees(bundler: ReturnType<typeof createArcBundlerClient>) {
   let maxFeePerGas: bigint;
   let maxPriorityFeePerGas: bigint;
   try {
@@ -100,8 +102,9 @@ function maxCost(op: UserOperation): bigint {
  */
 async function prepare(account: CrackPaySmartAccount, calls: readonly Call[], spend: bigint) {
   const bundler = createArcBundlerClient();
+  const fees = await bundlerFees(bundler);
   try {
-    const op = await bundler.prepareUserOperation({ account, calls: [...calls], paymaster: true });
+    const op = await bundler.prepareUserOperation({ account, calls: [...calls], paymaster: true, ...fees });
     return { bundler, op: op as UserOperation, sponsored: true as const };
   } catch (sponsorError) {
     // Logged, not swallowed: if the fallback fails too, this is the first clue.
@@ -111,7 +114,7 @@ async function prepare(account: CrackPaySmartAccount, calls: readonly Call[], sp
   const op = (await bundler.prepareUserOperation({
     account,
     calls: [...calls],
-    ...(await selfPaidFees(bundler)),
+    ...fees,
   })) as UserOperation;
   // The fee and the payment come out of the same USDC balance, and the fee is
   // taken first: if both do not fit, the payment would revert with the fee spent.

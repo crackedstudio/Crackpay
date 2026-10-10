@@ -80,7 +80,13 @@ describe("sendUserOp", () => {
     const result = await sendUserOp(account, calls);
 
     expect(bundler.prepareUserOperation).toHaveBeenCalledTimes(1);
-    expect(bundler.prepareUserOperation.mock.calls[0]?.[0]).toMatchObject({ paymaster: true });
+    // The bundler's 1 gwei tip floor applies to sponsored userOps too, so they
+    // bid Circle's quote rather than Arc's node estimate (a tip of ~1,000 wei).
+    expect(bundler.prepareUserOperation.mock.calls[0]?.[0]).toMatchObject({
+      paymaster: true,
+      maxFeePerGas: parseGwei("41.5"),
+      maxPriorityFeePerGas: parseGwei("1.5"),
+    });
     expect(chain.getBalance).not.toHaveBeenCalled();
     expect(result).toMatchObject({ status: "confirmed", gas: { sponsored: true } });
   });
