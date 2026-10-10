@@ -185,16 +185,28 @@ function Onboarding() {
 
   const createAccount = async () => {
     setError(null);
+    // Which step failed goes in the error: several steps can fail with the same
+    // generic message from Circle, and the user's screenshot is often all we get.
+    let doing = "Creating your passkey";
     try {
       // Reuse a passkey made on an earlier, unfinished attempt rather than creating a second one.
       setStep({ name: "creating", stage: "passkey" });
       // Circle needs a unique passkey name; the suffix keeps a retry of the same handle from clashing.
       const passkeyName = `${cleanHandle}.${crypto.randomUUID().slice(0, 4)}`;
-      const account = wallet.status === "ready" ? wallet.account : await wallet.signIn(await registerPasskey(passkeyName));
+      let account;
+      if (wallet.status === "ready") {
+        account = wallet.account;
+      } else {
+        const credential = await registerPasskey(passkeyName);
+        doing = "Opening your account";
+        account = await wallet.signIn(credential);
+      }
 
       setStep({ name: "creating", stage: "account" });
+      doing = "Approving your handle";
       const attestation = await api.post<Attestation>("/api/identity/attest", { account: account.address, handle: cleanHandle });
       let result;
+      doing = `Registering @${cleanHandle}`;
       try {
         result = await registerIdentity(account, attestation);
       } catch (caught) {
@@ -215,13 +227,15 @@ function Onboarding() {
       }
 
       setStep({ name: "creating", stage: "finishing" });
+      doing = "Finishing up";
       await recordRegistration(account.address);
       await wallet.refreshHandle();
       // Not straight to `next`: a brand-new account has nothing in it, and the
       // one thing it needs is a way to get funded.
       setStep({ name: "done", handle: cleanHandle });
     } catch (caught) {
-      setError(errorText(caught));
+      console.error(`[crackpay] sign-up failed: ${doing}`, caught);
+      setError(`${doing} failed. ${errorText(caught)}`);
       setAvailable(null);
       // Back to the passkey step, not all the way to the handle: a cancelled
       // prompt is one tap from being retried, and the handle is still theirs.
