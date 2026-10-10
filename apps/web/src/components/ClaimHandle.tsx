@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Hex } from "viem";
 import { ApiClientError, api } from "@/lib/api";
+import { FREE_FEES_PAUSED } from "@/config/fees";
 import { errorText } from "@/lib/format";
 import { recordRegistration } from "@/lib/identity-client";
 import { GasFundsError, registerIdentity } from "@/lib/userop";
@@ -16,7 +17,9 @@ type Attestation = { phoneHash: Hex; handle: string; deadline: number; signature
  * For an account whose handle was chosen at sign-up but never registered,
  * because free network fees were paused and the account had nothing to pay
  * the fee with. Claiming tries Circle's sponsorship first, so it is free again
- * the moment Circle is back; until then the account pays about a cent.
+ * the moment Circle is back; until then the account pays about a cent. The
+ * copy, and whether an empty account is sent to deposit first, follow
+ * NEXT_PUBLIC_FREE_FEES_PAUSED.
  */
 export function ClaimHandle({ account, handle, balance }: { account: CrackPaySmartAccount; handle: string; balance: bigint | null }) {
   const wallet = useWallet();
@@ -47,15 +50,18 @@ export function ClaimHandle({ account, handle, balance }: { account: CrackPaySma
     }
   };
 
-  const empty = balance === 0n;
+  // With sponsorship back, claiming costs nothing, so an empty account can claim.
+  const empty = FREE_FEES_PAUSED && balance === 0n;
   return (
     <div className="flex flex-col gap-3 rounded-lg border-[1.5px] border-dashed border-ink p-4.5">
       <div className="flex flex-col gap-1">
         <p className="text-[1.0625rem] font-bold">Claim @{handle}</p>
         <p className="text-sm leading-5 text-muted">
-          {empty
-            ? "Your account works already. Add a little money, then claim your handle so people can pay you by name. Free network fees are paused for now, so it costs about a cent."
-            : "Register your handle so people can pay you by name. Free network fees are paused for now, so it costs about a cent."}
+          {!FREE_FEES_PAUSED
+            ? "Register your handle so people can pay you by name. It's free."
+            : empty
+              ? "Your account works already. Add a little money, then claim your handle so people can pay you by name. Free network fees are paused for now, so it costs about a cent."
+              : "Register your handle so people can pay you by name. Free network fees are paused for now, so it costs about a cent."}
         </p>
       </div>
       <Callout tone="error">{error}</Callout>
